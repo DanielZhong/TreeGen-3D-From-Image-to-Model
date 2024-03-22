@@ -70,41 +70,75 @@ global proc callLSystemCmd()
     print("callLSystemCmd success\n"); 
 }
 
+// global proc displayWindow()
+// {   
+//     global string $iterationSlider;
+//     global string $stepSizeSlider;
+//     global string $defaultAngleSlider;
+//     global string $grammarScrollField;
+
+//     if (`window -exists myWindow`)
+//         deleteUI myWindow;
+
+//     // Create a new window
+//     window -widthHeight 450 300 -title "Call LSystem Command" myWindow;
+    
+//     columnLayout -adjustableColumn true;          
+//     string $formBrowse = `formLayout -numberOfDivisions 120`;
+//     string $buttonBrowse = `button -command openFile -label "Browse.."`;
+//     string $textBrowse = `text  -label "Browse for grammar files"`;
+//     formLayout -edit -attachForm $textBrowse "left" 20 -attachForm $buttonBrowse "right" 20  $formBrowse;
+//     setParent ..;
+//     $grammarScrollField = `scrollField -height 150 -wordWrap off`;
+//     setParent ..;
+        
+//     // LSystem Parameters section
+//     frameLayout -label "LSystem Parameters";
+//     $iterationSlider = `intSliderGrp -label "Iterations" -field true`;
+//     $stepSizeSlider = `floatSliderGrp -label "Default step size" -field true`;
+//     $defaultAngleSlider = `floatSliderGrp -label "Default angle" -field true`;
+//     setParent ..;
+    
+//     // Confirm button layout
+//     string $buttonForm = `formLayout -numberOfDivisions 120`;
+//     string $buttonCreate = `button -label "Create" -command callLSystemCmd`;
+//     string $buttonCancel = `button -label "Cancel" -command "deleteUI myWindow"`;
+
+//     formLayout -edit -attachForm $buttonCreate "left" 20 -attachForm $buttonCancel "right" 20 $buttonForm;
+//     showWindow myWindow;
+//     print("displayLSystemDialog success\n");  
+// }
+
 global proc displayWindow()
 {   
-    global string $iterationSlider;
-    global string $stepSizeSlider;
-    global string $defaultAngleSlider;
-    global string $grammarScrollField;
-
-    if (`window -exists myWindow`)
-        deleteUI myWindow;
+    // ... 其他代码部分保持不变 ...
 
     // Create a new window
-    window -widthHeight 450 300 -title "Call LSystem Command" myWindow;
+    window -widthHeight 300 450 -title "LSystem UI" myWindow;
     
-    columnLayout -adjustableColumn true;          
-    string $formBrowse = `formLayout -numberOfDivisions 120`;
-    string $buttonBrowse = `button -command openFile -label "Browse.."`;
-    string $textBrowse = `text  -label "Browse for grammar files"`;
-    formLayout -edit -attachForm $textBrowse "left" 20 -attachForm $buttonBrowse "right" 20  $formBrowse;
-    setParent ..;
-    $grammarScrollField = `scrollField -height 150 -wordWrap off`;
-    setParent ..;
-        
-    // LSystem Parameters section
-    frameLayout -label "LSystem Parameters";
-    $iterationSlider = `intSliderGrp -label "Iterations" -field true`;
-    $stepSizeSlider = `floatSliderGrp -label "Default step size" -field true`;
-    $defaultAngleSlider = `floatSliderGrp -label "Default angle" -field true`;
-    setParent ..;
+    columnLayout -adjustableColumn true;
+    button -label "Load Image";
+    // Create a dropdown menu
+    optionMenu -label "ParseMode";
+    menuItem -label "Option1";
+    menuItem -label "Option2";
+    button -label "Parse Grammar";
+    button -label "Generate Model";
     
-    // Confirm button layout
-    string $buttonForm = `formLayout -numberOfDivisions 120`;
-    string $buttonCreate = `button -label "Create" -command callLSystemCmd`;
-    string $buttonCancel = `button -label "Cancel" -command "deleteUI myWindow"`;
+    // Add the sliders with labels
+    floatSliderGrp -label "Angle" -field true;
+    floatSliderGrp -label "Step Size" -field true;
+    intSliderGrp -label "Iterations" -field true;
+    // Add any additional sliders following the same pattern here...
+    floatSliderGrp -label "Scalar" -field true;
+    floatSliderGrp -label "Angle Perturbation" -field true;
+    floatSliderGrp -label "Scalar Perturbation" -field true;
 
-    formLayout -edit -attachForm $buttonCreate "left" 20 -attachForm $buttonCancel "right" 20 $buttonForm;
+    // Confirm button layout
+    rowLayout -numberOfColumns 2;
+    button -label "OK" -command callLSystemCmd;
+    button -label "Cancel" -command "deleteUI myWindow";
+
     showWindow myWindow;
     print("displayLSystemDialog success\n");  
 }
