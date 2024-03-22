@@ -326,11 +326,13 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
     <ClCompile Include="F:\Study\GitHubResources\TreeGen-3D-From-Image-to-Model\TreeGen3D\LSystemMaya\src\LSystemCmd.cpp" />
     <ClCompile Include="F:\Study\GitHubResources\TreeGen-3D-From-Image-to-Model\TreeGen3D\LSystemMaya\src\PluginMain.cpp" />
     <ClCompile Include="F:\Study\GitHubResources\TreeGen-3D-From-Image-to-Model\TreeGen3D\LSystem\src\vec.cpp" />
+    <ClCompile Include="src\LSystemNode.cpp" />
     <ClInclude Include="F:\Study\GitHubResources\TreeGen-3D-From-Image-to-Model\TreeGen3D\LSystemMaya\src\cylinder.h" />
     <ClInclude Include="F:\Study\GitHubResources\TreeGen-3D-From-Image-to-Model\TreeGen3D\LSystem\src\LSystem.h" />
     <ClInclude Include="F:\Study\GitHubResources\TreeGen-3D-From-Image-to-Model\TreeGen3D\LSystemMaya\src\LSystemCmd.h" />
     <ClInclude Include="F:\Study\GitHubResources\TreeGen-3D-From-Image-to-Model\TreeGen3D\LSystem\src\matrix.h" />
     <ClInclude Include="F:\Study\GitHubResources\TreeGen-3D-From-Image-to-Model\TreeGen3D\LSystem\src\vec.h" />
+    <ClInclude Include="src\LSystemNode.h" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="F:\Study\GitHubResources\TreeGen-3D-From-Image-to-Model\TreeGen3D\ZERO_CHECK.vcxproj">

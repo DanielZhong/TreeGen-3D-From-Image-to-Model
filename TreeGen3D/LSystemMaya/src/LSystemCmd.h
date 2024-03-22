@@ -11,6 +11,7 @@ public:
     virtual ~LSystemCmd();
     static void* creator() { return new LSystemCmd(); }
     MStatus doIt( const MArgList& args );
+    static MSyntax newSyntax();
 };
 
 #endif

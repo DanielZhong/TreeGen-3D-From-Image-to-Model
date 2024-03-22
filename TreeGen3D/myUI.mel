@@ -1,0 +1,126 @@
+global string $iterationSlider;
+global string $stepSizeSlider;
+global string $defaultAngleSlider;
+global string $grammarScrollField;
+global string $grammarPath;
+global string $grammar;
+
+global proc createLSystemUI()
+{
+    if (`menu -exists LSystemMenu`)
+        deleteUI LSystemMenu;
+
+    global string $gMainWindow;
+    setParent $gMainWindow;
+    menu -label "LSystem" LSystemMenu;
+    menuItem -label "Call LSystem Command" -command displayWindow;
+    menuItem -label "Create LSystem Node" -command createLSystemNode;       
+    print("createLSystemUI success\n");     
+}
+
+global proc openFile()
+{
+    global string $grammarPath;
+    global string $grammar;
+    global string $grammarScrollField;
+
+    // Open a file dialog to select a text file
+    $grammarPath = `fileDialog -directoryMask "*.txt" -mode 0`; // -mode 0 is for Open mode
+    if ($grammarPath != "") {
+        print ("Selected file path: " + $grammarPath + "\n");
+        // Attempt to open the file
+        $fileId = `fopen $grammarPath "r"`;
+        if ($fileId != "") {
+            // Successfully opened the file, now read its contents
+            $grammar = "";
+            while (!`feof $fileId`) {
+                $grammar += `fgetline $fileId`;
+            }
+            // Update the scrollField with the file contents
+            scrollField -edit -text $grammar $grammarScrollField;
+            
+            // Close the file
+            fclose $fileId;
+            print("File content loaded into the scroll field.\n");
+        } else {
+            print("Failed to open the file.\n");
+        }
+    } else {
+        print("No file was selected or dialog was canceled.\n");
+    }
+}
+
+global proc callLSystemCmd()
+{
+    global string $stepSizeSlider;
+    global string $defaultAngleSlider;
+    global string $grammar;
+    global string $iterationSlider;
+
+    int $ni = `intSliderGrp -q -v $iterationSlider`;
+    float $da = `floatSliderGrp -q -v $defaultAngleSlider`;
+    float $ss = `floatSliderGrp -q -v $stepSizeSlider`;
+
+    print ("stepSize = " + $ss
+     + "\ndefaultAngle = " + $da
+     +  "\ngrammar = " + $grammar
+     + "\nnumIterations = " + $ni + "\n");
+
+    LSystemCmd -ss $ss -da $da -ni $ni -g $grammar;
+    print("callLSystemCmd success\n"); 
+}
+
+global proc displayWindow()
+{   
+    global string $iterationSlider;
+    global string $stepSizeSlider;
+    global string $defaultAngleSlider;
+    global string $grammarScrollField;
+
+    if (`window -exists myWindow`)
+        deleteUI myWindow;
+
+    // Create a new window
+    window -widthHeight 450 300 -title "Call LSystem Command" myWindow;
+    
+    columnLayout -adjustableColumn true;          
+    string $formBrowse = `formLayout -numberOfDivisions 120`;
+    string $buttonBrowse = `button -command openFile -label "Browse.."`;
+    string $textBrowse = `text  -label "Browse for grammar files"`;
+    formLayout -edit -attachForm $textBrowse "left" 20 -attachForm $buttonBrowse "right" 20  $formBrowse;
+    setParent ..;
+    $grammarScrollField = `scrollField -height 150 -wordWrap off`;
+    setParent ..;
+        
+    // LSystem Parameters section
+    frameLayout -label "LSystem Parameters";
+    $iterationSlider = `intSliderGrp -label "Iterations" -field true`;
+    $stepSizeSlider = `floatSliderGrp -label "Default step size" -field true`;
+    $defaultAngleSlider = `floatSliderGrp -label "Default angle" -field true`;
+    setParent ..;
+    
+    // Confirm button layout
+    string $buttonForm = `formLayout -numberOfDivisions 120`;
+    string $buttonCreate = `button -label "Create" -command callLSystemCmd`;
+    string $buttonCancel = `button -label "Cancel" -command "deleteUI myWindow"`;
+
+    formLayout -edit -attachForm $buttonCreate "left" 20 -attachForm $buttonCancel "right" 20 $buttonForm;
+    showWindow myWindow;
+    print("displayLSystemDialog success\n");  
+}
+
+global proc createLSystemNode()
+{
+    createNode transform -n LSystem1;
+    createNode mesh -n LSystemShape1 -p LSystem1;
+    sets -add initialShadingGroup LSystemShape1;
+    createNode LSystemNode -n LSystemNode1;
+    connectAttr time1.outTime LSystemNode1.time;
+    connectAttr LSystemNode1.outputMesh LSystemShape1.inMesh;
+}
+
+global proc deleteLSystemUI()
+{
+    if (`window -exists myWindow`)
+        deleteUI myWindow;
+}

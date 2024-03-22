@@ -16,6 +16,9 @@
     <ClCompile Include="F:\Study\GitHubResources\TreeGen-3D-From-Image-to-Model\TreeGen3D\LSystem\src\vec.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\LSystemNode.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="F:\Study\GitHubResources\TreeGen-3D-From-Image-to-Model\TreeGen3D\LSystemMaya\src\cylinder.h">
@@ -31,6 +34,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="F:\Study\GitHubResources\TreeGen-3D-From-Image-to-Model\TreeGen3D\LSystem\src\vec.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\LSystemNode.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

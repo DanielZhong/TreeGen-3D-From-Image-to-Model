@@ -17,6 +17,7 @@
 #include <list>
 
 #include "LSystemCmd.h"
+#include "LSystemNode.h"
 
 MStatus initializePlugin( MObject obj )
 {
@@ -24,9 +25,25 @@ MStatus initializePlugin( MObject obj )
     MFnPlugin plugin( obj, "MyPlugin", "1.0", "Any");
 
     // Register Command
-    status = plugin.registerCommand( "LSystemCmd", LSystemCmd::creator );
+    status = plugin.registerCommand( "LSystemCmd", LSystemCmd::creator, LSystemCmd::newSyntax);
     if (!status) {
         status.perror("registerCommand");
+        return status;
+    }
+
+    plugin.setName("LSystem");
+
+    MGlobal::executeCommand("source \"" + plugin.loadPath() + "/myUI.mel\"");
+    status = plugin.registerUI("createLSystemUI", "deleteLSystemUI");
+    if (!status) {
+        status.perror("registerUI");
+        return status;
+    }
+
+    status = plugin.registerNode("LSystemNode", LSystemNode::id, LSystemNode::creator, LSystemNode::initialize);
+
+    if (!status) {
+        status.perror("registerNode");
         return status;
     }
 
@@ -42,6 +59,13 @@ MStatus uninitializePlugin( MObject obj)
     if (!status) {
 	    status.perror("deregisterCommand");
 	    return status;
+    }
+
+    // New added
+    status = plugin.deregisterNode(LSystemNode::id);
+    if (!status) {
+        status.perror("deregisterNode");
+        return status;
     }
 
     return status;
