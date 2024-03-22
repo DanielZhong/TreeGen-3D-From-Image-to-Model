@@ -1,0 +1,48 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="17.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="F:\Study\GitHubResources\TreeGen-3D-From-Image-to-Model\TreeGen3D\LSystemMaya\src\cylinder.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="F:\Study\GitHubResources\TreeGen-3D-From-Image-to-Model\TreeGen3D\LSystem\src\LSystem.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="F:\Study\GitHubResources\TreeGen-3D-From-Image-to-Model\TreeGen3D\LSystemMaya\src\LSystemCmd.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="F:\Study\GitHubResources\TreeGen-3D-From-Image-to-Model\TreeGen3D\LSystemMaya\src\PluginMain.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="F:\Study\GitHubResources\TreeGen-3D-From-Image-to-Model\TreeGen3D\LSystem\src\vec.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="F:\Study\GitHubResources\TreeGen-3D-From-Image-to-Model\TreeGen3D\LSystemMaya\src\cylinder.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="F:\Study\GitHubResources\TreeGen-3D-From-Image-to-Model\TreeGen3D\LSystem\src\LSystem.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="F:\Study\GitHubResources\TreeGen-3D-From-Image-to-Model\TreeGen3D\LSystemMaya\src\LSystemCmd.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="F:\Study\GitHubResources\TreeGen-3D-From-Image-to-Model\TreeGen3D\LSystem\src\matrix.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="F:\Study\GitHubResources\TreeGen-3D-From-Image-to-Model\TreeGen3D\LSystem\src\vec.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="F:\Study\GitHubResources\TreeGen-3D-From-Image-to-Model\TreeGen3D\LSystemMaya\CMakeLists.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{0C91ED76-E283-3AF9-9D4B-E0CAB04A1797}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{9B370AAC-562F-369D-9314-6557BC26DE19}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
