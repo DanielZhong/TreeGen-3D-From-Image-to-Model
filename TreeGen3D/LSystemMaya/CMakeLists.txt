@@ -15,6 +15,7 @@ src/cylinder.cpp
 ${LSystem_SOURCE_DIR}/LSystem.cpp
 src/LSystemCmd.cpp
 src/PluginMain.cpp
+src/LSystemNode.cpp
 ${LSystem_SOURCE_DIR}/vec.cpp
 )
 
@@ -24,6 +25,7 @@ set(HEADERS
     src/cylinder.h
     ${LSystem_SOURCE_DIR}/LSystem.h
     src/LSystemCmd.h
+    src/LSystemNode.h
     ${LSystem_SOURCE_DIR}/matrix.h
     ${LSystem_SOURCE_DIR}/vec.h
 )
