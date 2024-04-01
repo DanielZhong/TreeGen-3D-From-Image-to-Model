@@ -16,6 +16,7 @@ ${LSystem_SOURCE_DIR}/LSystem.cpp
 src/LSystemCmd.cpp
 src/PluginMain.cpp
 src/LSystemNode.cpp
+src/ImportImageCmd.cpp
 ${LSystem_SOURCE_DIR}/vec.cpp
 )
 
@@ -26,6 +27,7 @@ set(HEADERS
     ${LSystem_SOURCE_DIR}/LSystem.h
     src/LSystemCmd.h
     src/LSystemNode.h
+    src/ImportImageCmd.h
     ${LSystem_SOURCE_DIR}/matrix.h
     ${LSystem_SOURCE_DIR}/vec.h
 )

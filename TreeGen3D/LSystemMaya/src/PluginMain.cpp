@@ -18,13 +18,14 @@
 
 #include "LSystemCmd.h"
 #include "LSystemNode.h"
+#include "ImportImageCmd.h"
 
 MStatus initializePlugin( MObject obj )
 {
     MStatus   status = MStatus::kSuccess;
     MFnPlugin plugin( obj, "MyPlugin", "1.0", "Any");
 
-    // Register Command
+    //Register Command
     status = plugin.registerCommand( "LSystemCmd", LSystemCmd::creator, LSystemCmd::newSyntax);
     if (!status) {
         status.perror("registerCommand");
@@ -47,6 +48,12 @@ MStatus initializePlugin( MObject obj )
         return status;
     }
 
+    status = plugin.registerCommand("ImportImage", ImportImageCmd::creator, ImportImageCmd::newSyntax);
+    if (!status) {
+        status.perror("registerCommand for ImportImage");
+        return status;
+    }
+
     return status;
 }
 
@@ -59,6 +66,12 @@ MStatus uninitializePlugin( MObject obj)
     if (!status) {
 	    status.perror("deregisterCommand");
 	    return status;
+    }
+
+    status = plugin.deregisterCommand("ImportImage");
+    if (!status) {
+        status.perror("deregisterCommand for ImportImage");
+        return status;
     }
 
     // New added
