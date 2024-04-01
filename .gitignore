@@ -819,3 +819,39 @@ FodyWeavers.xsd
 # Additional files built by Visual Studio
 
 # End of https://www.toptal.com/developers/gitignore/api/cmake,visualstudio
+TreeGen3D/LSystemMaya/LSystemMaya.vcxproj
+TreeGen3D/LSystem/LSystem.vcxproj
+TreeGen3D/CMakeLists.txt
+TreeGen3D/build/ZERO_CHECK.vcxproj.filters
+TreeGen3D/build/ZERO_CHECK.vcxproj
+TreeGen3D/build/MyMaya.sln
+TreeGen3D/build/LSystemMaya/LSystemMaya.vcxproj.filters
+TreeGen3D/build/LSystemMaya/LSystemMaya.vcxproj
+TreeGen3D/build/LSystemMaya/LSystemMaya.sln
+TreeGen3D/build/LSystemMaya/INSTALL.vcxproj.filters
+TreeGen3D/build/LSystemMaya/INSTALL.vcxproj
+TreeGen3D/build/LSystemMaya/ALL_BUILD.vcxproj.filters
+TreeGen3D/build/LSystemMaya/ALL_BUILD.vcxproj
+TreeGen3D/build/LSystem/LSystem.vcxproj.filters
+TreeGen3D/build/LSystem/LSystem.vcxproj
+TreeGen3D/build/LSystem/LSystem.sln
+TreeGen3D/build/LSystem/INSTALL.vcxproj.filters
+TreeGen3D/build/LSystem/INSTALL.vcxproj
+TreeGen3D/build/LSystem/ALL_BUILD.vcxproj.filters
+TreeGen3D/build/LSystem/ALL_BUILD.vcxproj
+TreeGen3D/build/INSTALL.vcxproj.filters
+TreeGen3D/build/INSTALL.vcxproj
+TreeGen3D/build/ALL_BUILD.vcxproj.filters
+TreeGen3D/build/ALL_BUILD.vcxproj
+TreeGen3D/LSystemMaya/LSystemMaya.vcxproj
+TreeGen3D/LSystem/LSystem.vcxproj
+TreeGen3D/CMakeLists.txt
+*.vcxproj
+*.txt
+TreeGen3D/CMakeLists.txt
+TreeGen3D/LSystem/LSystem.vcxproj
+TreeGen3D/LSystemMaya/LSystemMaya.vcxproj
+TreeGen3D/CMakeLists.txt
+TreeGen3D/LSystem/LSystem.vcxproj
+TreeGen3D/LSystemMaya/LSystemMaya.vcxproj
+TreeGen3D/LSystem/LSystem.vcxproj

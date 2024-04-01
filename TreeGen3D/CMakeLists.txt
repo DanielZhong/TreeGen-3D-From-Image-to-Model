@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.18)
 
 project(MyMaya)
 
-set(MAYA_LOCATION "D:/App/Autodesk/Maya2024")
+set(MAYA_LOCATION "C:/Program Files/Autodesk/Maya2022")
 
 if (NOT EXISTS "${MAYA_LOCATION}")
   message(FATAL_ERROR "Maya not found at ${MAYA_LOCATION}, please set MAYA_LOCATION to the correct path!!!")
