@@ -9,6 +9,8 @@
 #undef MNoVersionString
 #include <maya/MArgList.h>
 #include <maya/MSyntax.h>
+#include "tree_structure.h"
+
 
 class ImportImageCmd : public MPxCommand {
 public:
@@ -19,6 +21,11 @@ public:
     static MSyntax newSyntax();
 
     MStatus parseBoundingBoxData(const std::string& filepath);
+    void buildNaryTree();
+    void processBoundingBox(Bounding_box_parse& bbx);
+
+private:
+    
 };
 
 #endif // IMPORTIMAGECMD_H
