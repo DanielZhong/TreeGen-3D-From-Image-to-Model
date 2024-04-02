@@ -7,11 +7,17 @@
 
 2. in ImportImageCmd.cpp(the main logic), try move helper variables(at the very top) into private member variables
 
-3. tutrle.cpp and .h I adjusted some codes, becuase we don't have qmath from qt
+3. buildGraph() has some bug when detecting Edge, check & compare print message with QT project
 
-Continue the remaining work
+4. Continue finish buildNaryTree() base on QT projects example (Main Part)
+
+5. organnize helper function into another file
 
 * Added files include: ImportImagecmd(main plugin logic), tree_structure, tutrle(adjusted), BOOST lib, udgcd_cycle_detector.hpp
+
+*  tutrle.cpp and .h I adjusted some codes, becuase we don't have qmath from qt (adjusted M_PI implmentation, and Changed qrand() to std::rand())
+
+* tested: QT Project generated grammar can work in project 2
 
 
 ## Reference:

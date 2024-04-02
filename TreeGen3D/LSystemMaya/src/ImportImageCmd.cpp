@@ -22,6 +22,16 @@
 #define Debug_extractMinimalSpanningTree 1
 #define Debug_buildNaryTree 1
 
+struct ruleSuccessor {
+    string successor;
+    vector<double> paramters;
+    ruleSuccessor() :successor("") {
+    }
+    ruleSuccessor(string s) :successor(s) {
+    }
+};
+typedef unordered_map<string, vector<ruleSuccessor> > newAssociativeArray;
+
 // ---------------------------------------------------------------------------------------------------------------------------------------------------
 // Helper Variable
 // TODO:: 不知道为什么不让存到private里面，调取的时候找不到，只能放这里了。。。
@@ -31,6 +41,13 @@ std::string m_save_image_name;
 double m_min_len;
 int m_root_id;
 UndirectedGraph m_graph;
+int m_tree_node_size_;
+double m_average_branch_angle_;
+int m_tree_node_size_angle_;
+newAssociativeArray m_rules;
+
+std::set<Nary_TreeNode*> m_selected_repetitions_nary_nodes;
+std::set<string> m_selected_repetitions;
 
 bool m_show_tree = true;
 bool m_show_tree_render = false;
@@ -298,6 +315,689 @@ MString toMString(const T& value) {
     ss << value;
     return MString(ss.str().c_str());
 }
+
+//void Nary_compute_strahler_number(Nary_TreeNode* root) {
+//    std::vector<std::vector<Nary_TreeNode*> > matrix;
+//    if (root == NULL)
+//    {
+//        //return matrix;
+//        return;
+//    }
+//
+//    stack<vector<Nary_TreeNode*> > sv;
+//    vector<Nary_TreeNode*> temp;
+//    temp.push_back(root);
+//    sv.push(temp);
+//
+//    vector<Nary_TreeNode*> path;
+//    path.push_back(root);
+//
+//    int count = 1;
+//    while (!path.empty())
+//    {
+//        for (int i = 0; i < path[0]->children.size(); i++) {
+//            if (path[0]->children[i] != NULL) {
+//                path.push_back(path[0]->children[i]);
+//            }
+//        }
+//        path.erase(path.begin());
+//        count--;
+//        if (count == 0)
+//        {
+//            /* vector<TreeNode*> tmp;
+//            vector<TreeNode *>::iterator it = path.begin();
+//            for(; it != path.end(); ++it)
+//            {
+//            tmp.push_back((*it));
+//            }*/
+//            sv.push(path);
+//            count = path.size();
+//        }
+//    }
+//
+//    while (!sv.empty())
+//    {
+//        if (sv.top().size() > 0)
+//        {
+//            matrix.push_back(sv.top());
+//        }
+//        sv.pop();
+//    }
+//
+//    for (int i = 0; i < matrix.size(); i++) {
+//        for (int j = 0; j < matrix[i].size(); j++) {
+//            Nary_TreeNode* cur_node = matrix[i][j];
+//            if (cur_node->children.size() == 0) {
+//                cur_node->strahler_number = 1;
+//                continue;
+//            }
+//            int max_strahler_number = cur_node->children[0]->strahler_number;
+//            bool same_order = true;
+//            for (int k = 1; k < cur_node->children.size(); k++) {
+//                if (cur_node->children[k]->strahler_number != max_strahler_number) {
+//                    max_strahler_number = std::max(cur_node->children[k]->strahler_number, max_strahler_number);
+//                    same_order = false;
+//                }
+//            }
+//            if ((same_order && cur_node->children.size() > 1) || cur_node->children.size() > 2) {
+//                cur_node->strahler_number = max_strahler_number + 1;
+//            }
+//            else {
+//                cur_node->strahler_number = max_strahler_number;
+//            }
+//        }
+//    }
+//}
+//
+//string Nary_write_grammar_forPaper(Nary_TreeNode* root, bool with_paras) {
+//    string str = "";
+//    if (root == NULL)
+//        return str;
+//
+//    std::ostringstream streamObj1, streamObj2, streamObj3;
+//
+//    streamObj3 << std::fixed; // Set Fixed -Point Notation
+//    streamObj3 << std::setprecision(1); // Set precision to 2 digits
+//    streamObj3 << abs(root->bbx.angleFromParent); //Add double to stream
+//    string turn_angle = streamObj3.str(); // Get string from output string stream
+//
+//    streamObj1 << std::fixed; // Set Fixed -Point Notation
+//    streamObj1 << std::setprecision(1); // Set precision to 2 digits
+//    double scaler = root->bbx.height / m_min_len;
+//    streamObj1 << scaler; //Add double to stream
+//    string turn_scaler = streamObj1.str(); // Get string from output string stream
+//
+//    streamObj2 << std::fixed; // Set Fixed -Point Notation
+//    streamObj2 << std::setprecision(1); // Set precision to 2 digits
+//    streamObj2 << abs(root->strahler_number); //Add double to stream
+//    string strahler_number = streamObj2.str(); // Get string from output string stream
+//
+//    if (abs(root->bbx.angleFromParent) < m_mianBranchAngle_thrs) {
+//        if (with_paras) {
+//            string prefix = "F(" + turn_scaler + ")";
+//            str += prefix;
+//        }
+//        else {
+//            str += "F";
+//        }
+//
+//        int main_branch_idx = -1;
+//        for (int i = 0; i < root->children.size(); i++) {
+//            if (root->children[i]->main_branch) {
+//                main_branch_idx = i;
+//                continue;
+//            }
+//            str += Nary_write_grammar_forPaper(root->children[i], with_paras);
+//        }
+//        if (main_branch_idx != -1) {
+//            str += Nary_write_grammar_forPaper(root->children[main_branch_idx], with_paras);
+//        }
+//    }
+//    else if (root->bbx.angleFromParent > 0) {
+//        if (with_paras) {
+//            //str += "[+(" + std::to_string(root->bbx.angleFromParent) + ")F";
+//            string prefix1 = "F(" + turn_scaler + ")";
+//            string prfix = "[+(" + turn_angle + ")" + prefix1;
+//            str += prfix;
+//        }
+//        else {
+//            str += "[+F";
+//        }
+//
+//        int main_branch_idx = -1;
+//        for (int i = 0; i < root->children.size(); i++) {
+//            if (root->children[i]->main_branch) {
+//                main_branch_idx = i;
+//                continue;
+//            }
+//            str += Nary_write_grammar_forPaper(root->children[i], with_paras);
+//        }
+//        if (main_branch_idx != -1) {
+//            str += Nary_write_grammar_forPaper(root->children[main_branch_idx], with_paras);
+//        }
+//        str += "]";
+//        //std::cout << "[+F]";
+//    }
+//    else if (root->bbx.angleFromParent < 0) {
+//        //std::cout << "[-(" << -root->bbx.angleFromParent << ")F]";
+//        //str += "[-(" + std::to_string(root->bbx.angleFromParent) + ")F";
+//        //str += "[-F";
+//        if (with_paras) {
+//            string prefix1 = "F(" + turn_scaler + ")";
+//            string prfix = "[-(" + turn_angle + ")" + prefix1;
+//            str += prfix;
+//        }
+//        else {
+//            str += "[-F";
+//        }
+//
+//        int main_branch_idx = -1;
+//        for (int i = 0; i < root->children.size(); i++) {
+//            if (root->children[i]->main_branch) {
+//                main_branch_idx = i;
+//                continue;
+//            }
+//            str += Nary_write_grammar_forPaper(root->children[i], with_paras);
+//        }
+//        if (main_branch_idx != -1) {
+//            str += Nary_write_grammar_forPaper(root->children[main_branch_idx], with_paras);
+//        }
+//        str += "]";
+//        //std::cout << "[-F]";
+//    }
+//    return str;
+//}
+//
+//string Nary_write_grammar(Nary_TreeNode* root, bool with_paras) {
+//    string str = "";
+//    if (root == NULL)
+//        return str;
+//
+//    std::ostringstream streamObj1, streamObj2, streamObj3;
+//
+//    streamObj3 << std::fixed; // Set Fixed -Point Notation
+//    streamObj3 << std::setprecision(1); // Set precision to 2 digits
+//    streamObj3 << abs(root->bbx.angleFromParent); //Add double to stream
+//    string turn_angle = streamObj3.str(); // Get string from output string stream
+//
+//    streamObj1 << std::fixed; // Set Fixed -Point Notation
+//    streamObj1 << std::setprecision(1); // Set precision to 2 digits
+//    double scaler = root->bbx.height / m_min_len;
+//    streamObj1 << scaler; //Add double to stream
+//    string turn_scaler = streamObj1.str(); // Get string from output string stream
+//
+//    streamObj2 << std::fixed; // Set Fixed -Point Notation
+//    streamObj2 << std::setprecision(1); // Set precision to 2 digits
+//    streamObj2 << abs(root->strahler_number); //Add double to stream
+//    string strahler_number = streamObj2.str(); // Get string from output string stream
+//
+//    if (abs(root->bbx.angleFromParent) < m_mianBranchAngle_thrs) {
+//        if (with_paras) {
+//            //string prefix = "<*(" + turn_scaler + ")F>";
+//            string prefix = "<*(" + turn_scaler + ")&(" + strahler_number + ")F>";
+//            str += prefix;
+//        }
+//        else {
+//            str += "F";
+//        }
+//
+//        int main_branch_idx = -1;
+//        for (int i = 0; i < root->children.size(); i++) {
+//            if (root->children[i]->main_branch) {
+//                main_branch_idx = i;
+//                continue;
+//            }
+//            str += Nary_write_grammar(root->children[i], with_paras);
+//        }
+//        if (main_branch_idx != -1) {
+//            str += Nary_write_grammar(root->children[main_branch_idx], with_paras);
+//        }
+//    }
+//    else if (root->bbx.angleFromParent > 0) {
+//        if (with_paras) {
+//            //str += "[+(" + std::to_string(root->bbx.angleFromParent) + ")F";
+//            string prefix1 = "<*(" + turn_scaler + ")&(" + strahler_number + ")F>";
+//            string prfix = "[+(" + turn_angle + ")" + prefix1;
+//            str += prfix;
+//        }
+//        else {
+//            str += "[+F";
+//        }
+//
+//        int main_branch_idx = -1;
+//        for (int i = 0; i < root->children.size(); i++) {
+//            if (root->children[i]->main_branch) {
+//                main_branch_idx = i;
+//                continue;
+//            }
+//            str += Nary_write_grammar(root->children[i], with_paras);
+//        }
+//        if (main_branch_idx != -1) {
+//            str += Nary_write_grammar(root->children[main_branch_idx], with_paras);
+//        }
+//        str += "]";
+//        //std::cout << "[+F]";
+//    }
+//    else if (root->bbx.angleFromParent < 0) {
+//        //std::cout << "[-(" << -root->bbx.angleFromParent << ")F]";
+//        //str += "[-(" + std::to_string(root->bbx.angleFromParent) + ")F";
+//        //str += "[-F";
+//        if (with_paras) {
+//            string prefix1 = "<*(" + turn_scaler + ")&(" + strahler_number + ")F>";
+//            string prfix = "[-(" + turn_angle + ")" + prefix1;
+//            str += prfix;
+//        }
+//        else {
+//            str += "[-F";
+//        }
+//
+//        int main_branch_idx = -1;
+//        for (int i = 0; i < root->children.size(); i++) {
+//            if (root->children[i]->main_branch) {
+//                main_branch_idx = i;
+//                continue;
+//            }
+//            str += Nary_write_grammar(root->children[i], with_paras);
+//        }
+//        if (main_branch_idx != -1) {
+//            str += Nary_write_grammar(root->children[main_branch_idx], with_paras);
+//        }
+//        str += "]";
+//        //std::cout << "[-F]";
+//    }
+//    return str;
+//}
+//
+//double Nary_get_scalar_para(Nary_TreeNode* root) {
+//    double scalar;
+//
+//    if (root != NULL) {
+//        if (root->children.size() > 0) {
+//            double max_scale = -1000;
+//            for (int i = 0; i < root->children.size(); i++) {
+//                double s = root->bbx.height / root->children[i]->bbx.height;
+//                max_scale = std::max(max_scale, s);
+//                if (!root->children[i]->main_branch) {
+//                    m_average_branch_angle_ += std::abs(root->children[i]->bbx.angleFromParent);
+//                    m_tree_node_size_angle_++;
+//                }
+//            }
+//            scalar = std::max(max_scale, 1.0);
+//            m_tree_node_size_++;
+//        }
+//        else {
+//            return 0.0;
+//        }
+//    }
+//    else {
+//        return 0.0;
+//    }
+//
+//    for (int i = 0; i < root->children.size(); i++) {
+//        scalar += Nary_get_scalar_para(root->children[i]);
+//    }
+//    return scalar;
+//}
+//
+//struct Nary_repetition_node {
+//    int oocur_time;
+//    int last_groups_numer;
+//    int group_node_size;
+//    std::vector<Nary_TreeNode*> parent_node;
+//    //std::unordered_set<TreeNode *> parent_node;
+//    Nary_repetition_node() : oocur_time(0), last_groups_numer(0) {}
+//};
+//
+//string Nary_find_repetitions(Nary_TreeNode* node, unordered_map<string, Nary_repetition_node>& m)
+//{
+//    if (!node)
+//        return "";
+//
+//    string str = "(";
+//    //str += node->turn_indicator;
+//    int main_branch_idx = -1;
+//    for (int i = 0; i < node->children.size(); i++) {
+//        if (node->children[i]->main_branch) {
+//            main_branch_idx = i;
+//            continue;
+//        }
+//        if (node->cluster_level == node->children[i]->cluster_level) {
+//            str += node->children[i]->turn_indicator;
+//            str += Nary_find_repetitions(node->children[i], m);
+//        }
+//
+//    }
+//    if (main_branch_idx != -1 && node->cluster_level == node->children[main_branch_idx]->cluster_level) {
+//        str += node->children[main_branch_idx]->turn_indicator;
+//        str += Nary_find_repetitions(node->children[main_branch_idx], m);
+//    }
+//    //str += to_string(node->data);
+//    str += ")";
+//
+//    // Subtree already present (Note that we use 
+//    // unordered_map instead of unordered_set 
+//    // because we want to print multiple duplicates 
+//    // only once, consider example of 4 in above 
+//    // subtree, it should be printed only once. 
+//    //if (m[str].oocur_time >= 1 && str.length()>3)
+//    //	cout << node->bbx_index << " ";
+//
+//    std::set<Nary_TreeNode*>::iterator siter;
+//    siter = m_selected_repetitions_nary_nodes.find(node);
+//    if (siter == m_selected_repetitions_nary_nodes.end()) {
+//        m[str].oocur_time++;
+//        m[str].parent_node.push_back(node);
+//    }
+//
+//    /*std::pair<std::unordered_set<TreeNode *>::iterator, bool> ret;
+//    ret = m[str].parent_node.insert(node);
+//    if (ret.second){
+//    m[str].oocur_time++;
+//    }*/
+//
+//    return str;
+//}
+//
+//string Nary_find_repetitions(Nary_TreeNode* node, unordered_map<string, Nary_repetition_node>& m)
+//{
+//    if (!node)
+//        return "";
+//
+//    string str = "(";
+//    //str += node->turn_indicator;
+//    int main_branch_idx = -1;
+//    for (int i = 0; i < node->children.size(); i++) {
+//        if (node->children[i]->main_branch) {
+//            main_branch_idx = i;
+//            continue;
+//        }
+//        if (node->cluster_level == node->children[i]->cluster_level) {
+//            str += node->children[i]->turn_indicator;
+//            str += Nary_find_repetitions(node->children[i], m);
+//        }
+//
+//    }
+//    if (main_branch_idx != -1 && node->cluster_level == node->children[main_branch_idx]->cluster_level) {
+//        str += node->children[main_branch_idx]->turn_indicator;
+//        str += Nary_find_repetitions(node->children[main_branch_idx], m);
+//    }
+//    //str += to_string(node->data);
+//    str += ")";
+//
+//    // Subtree already present (Note that we use 
+//    // unordered_map instead of unordered_set 
+//    // because we want to print multiple duplicates 
+//    // only once, consider example of 4 in above 
+//    // subtree, it should be printed only once. 
+//    //if (m[str].oocur_time >= 1 && str.length()>3)
+//    //	cout << node->bbx_index << " ";
+//
+//    std::set<Nary_TreeNode*>::iterator siter;
+//    siter = m_selected_repetitions_nary_nodes.find(node);
+//    if (siter == m_selected_repetitions_nary_nodes.end()) {
+//        m[str].oocur_time++;
+//        m[str].parent_node.push_back(node);
+//    }
+//
+//    /*std::pair<std::unordered_set<TreeNode *>::iterator, bool> ret;
+//    ret = m[str].parent_node.insert(node);
+//    if (ret.second){
+//    m[str].oocur_time++;
+//    }*/
+//
+//    return str;
+//}
+//
+//string Nary_select_prefer_repetition(unordered_map<string, Nary_repetition_node>& m, double weight, bool& find) {
+//    string select_str = "";
+//    std::unordered_map<string, Nary_repetition_node>::iterator iter;
+//    //now we only get the largest sub-tree, but we prefer the one has selected before
+//    int max_node_size = -1;
+//
+//    std::vector<string> selected_strs;
+//    std::vector<int> node_sizes;
+//    int max_node_size_in_selected = -1;
+//    int max_node_pos_in_selected = 0;
+//
+//    std::pair<std::set<string>::iterator, bool> ret;
+//
+//    for (iter = m.begin(); iter != m.end(); iter++)
+//    {
+//        // get the node numbers of this sub-tree
+//        string str = iter->first;
+//        int num = 0;
+//        for (int j = 0; j < str.length(); j++) {
+//            if (str.at(j) == '(' || str.at(j) == ')' || str.at(j) == '-') {
+//                num++;
+//            }
+//        }
+//        int group_node_size = str.length() - num + 1;
+//        iter->second.group_node_size = group_node_size;
+//
+//        std::set<string>::iterator siter;
+//        siter = m_selected_repetitions.find(str);
+//        //ret = m_selected_repetitions.insert(str);
+//
+//        /*
+//        2020.02.08: Jianwei changed the 'group_node_size >= 3' to 'group_node_size >= 2'
+//        */
+//        if ((iter->second.oocur_time > 1 && group_node_size >= 3) || siter != m_selected_repetitions.end()) {
+//            //if (iter->second.oocur_time > 1 && group_node_size >= 3){
+//            if (group_node_size > max_node_size) {
+//                max_node_size = group_node_size;
+//                select_str = iter->first;
+//            }
+//            if (siter != m_selected_repetitions.end()) {
+//                selected_strs.push_back(iter->first);
+//                node_sizes.push_back(group_node_size);
+//                if (group_node_size > max_node_size_in_selected) {
+//                    max_node_size_in_selected = group_node_size;
+//                    max_node_pos_in_selected = selected_strs.size() - 1;
+//                }
+//            }
+//        }
+//    }
+//
+//    if (selected_strs.empty()) {
+//        find = false;
+//        return select_str;
+//    }
+//    else {
+//        if (max_node_size_in_selected == max_node_size) {
+//            find = true;
+//            return select_str;
+//        }
+//        else {
+//            find = true;
+//            return selected_strs[max_node_pos_in_selected];
+//        }
+//    }
+//
+//    return select_str;
+//}
+//
+//void Nary_generate_conformal_grammar(Nary_TreeNode* root, unordered_map<string, Nary_repetition_node>& m) {
+//
+//    if (root == NULL) {
+//        return;
+//    }
+//    int max_iter = 5;
+//    int type_id = 0;
+//    double weight = 0.5;
+//    int real_iters = 0;
+//    for (int k = 0; k < max_iter; k++) {
+//        //find all repetitions in current tree/sub-tree
+//        bool new_repetition = false;
+//        m.clear();
+//        Nary_find_repetitions(root, m);
+//        std::unordered_map<string, Nary_repetition_node>::iterator iter;
+//        for (iter = m.begin(); iter != m.end(); iter++) {
+//            if (iter->second.oocur_time > 1 && iter->second.oocur_time > iter->second.last_groups_numer) {
+//                new_repetition = true;
+//            }
+//        }
+//        //stop if cannot cluster anymore
+//        bool find_again = false;
+//        string str = Nary_select_prefer_repetition(m, weight, find_again);
+//        if (str == "") {
+//            //std::cout << "No selected repetition!" << std::endl;
+//            if (root->parent != NULL && !root->old_repetition) {
+//                ruleSuccessor rule = Nary_write_rules(root, true);
+//                m_rules[alphabet[m_alphabet_pointer]].push_back(rule);
+//                //std::cout << alphabet[m_alphabet_pointer] << " -> " << rule.successor << endl;
+//                //m_alphabet_pointer++;
+//            }
+//            break;
+//        }
+//        m_selected_repetitions.insert(str);
+//
+//        //update the cluster information according to current repetition
+//        Nary_repetition_node r_node = m[str];
+//        int last_groups_numer = r_node.last_groups_numer;
+//        if (!find_again) {
+//            m_used_symbols[str] = alphabet[m_alphabet_pointer];
+//        }
+//
+//        //int cluster_id = 0;
+//        for (int i = last_groups_numer; i < r_node.parent_node.size(); i++) {
+//            r_node.parent_node[i]->old_repetition = find_again;
+//            m_selected_repetitions_nary_nodes.insert(r_node.parent_node[i]);
+//            if (i == 0) {// we only genrate the grammar once for current repetition
+//                Nary_generate_conformal_grammar(r_node.parent_node[i], m);
+//                //if (find_again) m_alphabet_pointer--;
+//            }
+//            if (find_again) {
+//                bool update = Nary_update_cluster_infomation(r_node.parent_node[i], i, m_used_symbols[str]); //update the node information;
+//            }
+//            else {
+//                bool update = Nary_update_cluster_infomation(r_node.parent_node[i], i, alphabet[m_alphabet_pointer]); //update the node information;
+//            }
+//
+//            Nary_perform_clustring(r_node.parent_node[i], r_node.parent_node[i]->old_repetition); // perform real clustring on the sub-tree, i.e., collpase each repetition to one node 
+//        }
+//        if (!find_again) m_alphabet_pointer++;
+//
+//        real_iters++;
+//
+//        //std::cout << "***********After iteration " << k + 1 << "**************" << std::endl;
+//        //Nary_print_tree(root, 0);
+//    }
+//
+//    //cout << "Our Greedy Iterations: " << real_iters << endl;
+//}
+//
+//void GlViewer::grammar_induction() {
+//    // collect information about the grammar 
+//    std::vector<ruleProductions> productions;
+//    newAssociativeArray::const_iterator iter;
+//    std::unordered_map<string, int> symbols_infor;
+//    for (iter = m_rules.begin(); iter != m_rules.end(); ++iter)
+//    {
+//        string left = iter->first;
+//        symbols_infor[left] = 0;
+//        vector<ruleSuccessor> sucs = iter->second;
+//        for (int i = 0; i < sucs.size(); i++) {
+//            string right = sucs[i].successor;
+//            //bool has_non_terminals = rule_has_non_terminals(right);
+//            /*bool has_non_terminals = false;
+//            for (int i = 0; i < right.length(); i++) {
+//            if (!(right.at(i) == '(' || right.at(i) == ')' || right.at(i) == '+' || right.at(i) == '-' || right.at(i) == '[' || right.at(i) == ']' || right.at(i) == 'F')) {
+//            has_non_terminals = true;
+//            break;
+//            }
+//            }*/
+//            //if(has_non_terminals) {
+//            ruleProductions rule(left, right);
+//            productions.push_back(rule);
+//            symbols_infor[left] += 1;
+//            //}
+//        }
+//    }
+//
+//    // we merge similar rules in a greedy way
+//    int max_iter = 10;
+//    double edit_dis_threshold = 6;
+//    for (int i = 0; i < max_iter; i++) {
+//        bool merged = false;
+//        //compute current grammar length
+//        int grammar_length = compute_grammar_length(productions, symbols_infor);
+//
+//        //find and merge two rules that can be merged
+//        //std::vector<pair_rule> candidate_pairs;
+//        //std::vector<int> min_loss_ids;
+//        double min_loss = 100000;
+//        std::vector<ruleProductions> productions_new;
+//        std::vector<ruleProductions> productions_final;
+//        //bool update = false;
+//        for (int j = 0; j < productions.size(); j++)
+//        {
+//            //cout << iter->second[0].successor << endl;
+//            string left1 = productions[j].precessor;
+//            string right1 = productions[j].successor;
+//            //if (left1 == "S") {
+//            for (int k = 0; k < productions.size(); k++) {
+//                bool update = false;
+//                if (j == k) continue;
+//                //cout << iter2->second[0].successor << endl;
+//                string left2 = productions[k].precessor;
+//                string right2 = productions[k].successor;
+//
+//                if (left1 == left2) continue;
+//
+//                double min_edit_distance;
+//                if (left2 == "S") {
+//                    min_edit_distance = edit_distance_DP(right1, right2);
+//                }
+//                else {
+//                    min_edit_distance = edit_distance_DP(right2, right1);
+//                }
+//
+//                if (productions.size() == 2) {
+//                    min_edit_distance = 0;
+//                }
+//                if (min_edit_distance > edit_dis_threshold) {
+//                    continue;
+//                }
+//                productions_new.clear();
+//                productions_new.assign(productions.begin(), productions.end()); // copy all rules
+//
+//                if (left2 == "S") {
+//                    merged = merge_two_rules(productions_new, k, j, symbols_infor);
+//                }
+//                else {
+//                    merged = merge_two_rules(productions_new, j, k, symbols_infor);
+//                }
+//                int grammar_length_new = compute_grammar_length(productions_new, symbols_infor);
+//                double loss = (grammar_length_new - grammar_length) + min_edit_distance;
+//                if (loss < min_loss) {
+//                    min_loss = loss;
+//                    productions_final.clear();
+//                    productions_final.assign(productions_new.begin(), productions_new.end());
+//                    update = true;
+//                }
+//                //swap
+//                if (update) {
+//                    productions.assign(productions_final.begin(), productions_final.end());
+//                    productions_final.clear();
+//                }
+//            }
+//            //}
+//        }
+//
+//        //cout << "Merge iteration: " << i << endl;
+//        if (merged == false) break;
+//    }
+//
+//    //output 
+//    cout << "After grammar generalization..." << endl;
+//    m_final_grammar_length_ = 0;
+//    for (int k = 0; k < productions.size(); k++) {
+//
+//        string right = productions[k].successor;
+//        bool has_non_terminals = false;
+//        for (int i = 0; i < right.length(); i++) {
+//            if (!(right.at(i) == '(' || right.at(i) == ')' || right.at(i) == '+' || right.at(i) == '-' || right.at(i) == '[' || right.at(i) == ']' || right.at(i) == 'F')) {
+//                has_non_terminals = true;
+//                break;
+//            }
+//        }
+//        if (!has_non_terminals) continue; // if the right side only contains terminal 'F', we discard this rule
+//
+//        if (symbols_infor[productions[k].precessor] > 1) {
+//            string::size_type idx = productions[k].successor.find(productions[k].precessor);
+//            if (idx != string::npos) {
+//                cout << productions[k].precessor << "->" << productions[k].successor << endl;
+//                m_final_grammar_length_ += productions[k].precessor.length();
+//                m_final_grammar_length_ += productions[k].successor.length();
+//            }
+//            continue;
+//        }
+//
+//        cout << productions[k].precessor << "->" << productions[k].successor << endl;
+//        m_final_grammar_length_ += productions[k].precessor.length();
+//        m_final_grammar_length_ += productions[k].successor.length();
+//    }
+//}
 
 // ---------------------------------------------------------------------------------------------------------------------------------------------------
 // Constructor & Deconstructor & Creator & Input Syntax
@@ -739,4 +1439,75 @@ void ImportImageCmd::buildNaryTree() {
     Nary_print_tree(root_node, 0);
 #endif
     // TODO: More codes here
+    //Nary_compute_strahler_number(root_node);
+    //bool output_strahler_number = true;
+
+    ////write expansion grammer
+    //std::cout << "Expansion grammar (input string) with parameters: " << std::endl;
+    //string expansion_grammer_withParas;
+    ////expansion_grammer_withParas = Nary_write_grammar(root_node, true);
+    //expansion_grammer_withParas = Nary_write_grammar_forPaper(root_node, true);
+    //std::cout << expansion_grammer_withParas << std::endl;
+
+    //std::cout << "Expansion grammar (input string) without parameters: " << std::endl;
+    //string expansion_grammer = Nary_write_grammar(root_node, false);
+    //std::cout << expansion_grammer << std::endl;
+    //std::cout << std::endl;
+
+    ////get the scale and branching angle parameters
+    //m_tree_node_size_ = 0;
+    //m_average_branch_angle_ = 0.0;
+    //m_tree_node_size_angle_ = 0;
+    //double scalar_para = Nary_get_scalar_para(root_node);
+    //scalar_para /= m_tree_node_size_;
+    //m_average_branch_angle_ /= m_tree_node_size_angle_;
+
+    //m_rules.clear();
+
+    //if (m_optAlgorithm_ == "Our") {
+    //    //inference using our method
+    //    m_alphabet_pointer = 2;
+    //    unordered_map<string, Nary_repetition_node> m;
+    //    m_selected_repetitions.clear();
+    //    m_selected_repetitions_nary_nodes.clear();
+    //    m_used_symbols.clear();
+    //    Nary_generate_conformal_grammar(root_node, m);
+    //    // write the last rule
+    //    ruleSuccessor rule = Nary_write_rules(root_node, true);
+    //    m_rules[alphabet[1]].push_back(rule);
+    //    std::cout << alphabet[1] << " -> " << rule.successor << std::endl;
+    //}
+
+    //std::cout << std::endl;
+
+    ////print grammer
+    //std::cout << "The compact conformal grammar: " << std::endl;
+    //newAssociativeArray::const_iterator iter;
+    //int compact_grammar_len = 0;
+    //for (iter = m_rules.begin(); iter != m_rules.end(); ++iter)
+    //{
+    //    string left = iter->first;
+    //    vector<ruleSuccessor> sucs = iter->second;
+    //    for (int i = 0; i < sucs.size(); i++) {
+    //        string right = sucs[i].successor;
+    //        cout << left << " = " << right << endl;
+    //        compact_grammar_len += left.length();
+    //        compact_grammar_len += right.length();
+    //    }
+    //}
+    //std::cout << std::endl;
+
+    ////merge similar rules
+    //grammar_induction();
+
+    ////write the last rule about the paramter
+    //std::ostringstream streamObj3;
+    //streamObj3 << std::fixed; // Set Fixed -Point Notation
+    //streamObj3 << std::setprecision(2); // Set precision to 2 digits
+    //streamObj3 << scalar_para; //Add double to stream
+    ////string succ = "<*(" + streamObj3.str() + ")F>";
+    //string succ = "F(*" + streamObj3.str() + ")";
+    //std::cout << "F->" << succ << std::endl;
+
+    //std::cout << std::endl;
 }
