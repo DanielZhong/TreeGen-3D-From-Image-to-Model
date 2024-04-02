@@ -24,6 +24,8 @@ Nary_TreeNode* rootNode;
 std::string m_save_image_name;
 double m_min_len;
 int m_root_id;
+UndirectedGraph m_graph;
+double m_mianBranchAngle_thrs;
 
 
 // Helper Functions
@@ -72,6 +74,35 @@ inline MVector my_rotate(const MVector& s, double angleD) {
     double yv = -s.x * sin(angle) + s.y * cos(angle);
     MVector t(xv, yv, 0.0);
     return t;
+}
+
+bool inline Nary_GreaterSort(Nary_TreeNode* a, Nary_TreeNode* b) {
+    return (a->bbx.angleFromParent > b->bbx.angleFromParent);
+}
+
+void Nary_print_tree(Nary_TreeNode* root, int spaces) {
+    int loop;
+    if (root != NULL) {
+        MString spaceStr;
+
+        for (loop = 1; loop <= spaces; loop++) {
+            spaceStr += " ";
+        }
+
+        MGlobal::displayInfo(spaceStr + root->bbx_index);
+    }
+
+    int main_branch_idx = -1;
+    for (unsigned int i = 0; i < root->children.size(); i++) {
+        if (root->children[i]->main_branch) {
+            main_branch_idx = i;
+            continue;
+        }
+        Nary_print_tree(root->children[i], spaces + 4);
+    }
+    if (main_branch_idx != -1) {
+        Nary_print_tree(root->children[main_branch_idx], spaces + 4);
+    }
 }
 
 // ---------------------------------------------------------------------------------------------------------------------------------------------------
@@ -148,16 +179,17 @@ MStatus ImportImageCmd::parseBoundingBoxData(const std::string& filepath) {
             bbx.center_position = R2Vector(x_c, y_c);
             bbx.label_id = get_class_id(class_name);
 
-            // Adjust width, height, and angle based on orientation
             if (w > h) {
                 bbx.width = h;
                 bbx.height = w;
-                bbx.angleFromY = -angle + 90;  // Adjusting angle based on orientation
+                bbx.angleFromY = -angle + 90;
+                bbx.angleFromY_opp = -(90 + angle);
             }
             else {
                 bbx.width = w;
                 bbx.height = h;
-                bbx.angleFromY = -angle;  // No additional rotation needed
+                bbx.angleFromY = -angle - 180;
+                bbx.angleFromY_opp = -angle;
             }
 
             m_min_len = std::min(m_min_len, bbx.height);
@@ -196,84 +228,91 @@ MStatus ImportImageCmd::parseBoundingBoxData(const std::string& filepath) {
             m_bbx_parse.push_back(bbx);
 
             // Process each bounding box
-            MGlobal::displayInfo(MString("Processed bbox for class: ") + class_name.c_str());
+            //MGlobal::displayInfo(MString("Processed bbox for class: ") + class_name.c_str());
+
+            //buildNaryTree();
         }
     }
-
     inFile.close();
+    /*for (size_t i = 0; i < m_bbx_parse.size(); ++i) {
+        const auto& bbx = m_bbx_parse[i];
+        MGlobal::displayInfo(MString("BBX ") + std::to_string(i + 1).c_str() + ": Center (" + std::to_string(bbx.center_position.X()).c_str() + ", " + std::to_string(bbx.center_position.Y()).c_str() + "), Width: " + std::to_string(bbx.width).c_str() + ", Height: " + std::to_string(bbx.height).c_str() + ", Angle: " + std::to_string(bbx.angleFromY).c_str());
+    }*/
     return MS::kSuccess;
 }
 
-//void ImportImageCmd::processBoundingBox(Bounding_box_parse& bbx) {
-//    // Process and manipulate bounding box as necessary
-//    // This could involve setting up relationships, computing additional properties, etc.
-//}
-//
-//void ImportImageCmd::buildNaryTree() {
-//    std::vector<Nary_TreeNode*> nodes_list;
-//    std::vector<bool> visited;
-//    std::vector<int> parents;
-//    //build tree nodes
-//    for (int i = 0; i < m_bbx_parse.size(); i++) {
-//        Bounding_box_parse cur_bbx = m_bbx_parse[i];
-//        Nary_TreeNode* cur_node = CreateNaryTreeNode(m_bbx_parse[i]);
-//        cur_node->bbx_index = i + 1;
-//        nodes_list.push_back(cur_node);
-//        visited.push_back(false);
-//    }
-//    //consturct the tree
-//    Nary_TreeNode* root_node = nodes_list[m_root_id];
-//    root_node->bbx.angleFromParent = root_node->bbx.angleFromY_LC;
-//    visited[m_root_id] = true;
-//
-//    queue<Nary_TreeNode*> qt;
-//    qt.push(root_node);
-//    typedef boost::property_map<UndirectedGraph, boost::vertex_index_t>::type IndexMap;
-//    IndexMap index = get(boost::vertex_index, m_graph);
-//
-//    while (!qt.empty()) {
-//        Nary_TreeNode* cur_node = qt.front();
-//        qt.pop();
-//        if (cur_node) {
-//            UndirectedGraph::adjacency_iterator vit, vend;
-//            std::vector<Nary_TreeNode*> children_list;
-//            for (std::tie(vit, vend) = boost::adjacent_vertices(cur_node->bbx_index - 1, m_graph); vit != vend; ++vit) {
-//                int adj_idx = index[*vit];
-//                if (!visited[adj_idx]) {
-//                    double p1 = nodes_list[adj_idx]->bbx.angleFromY_LC - cur_node->bbx.angleFromY_LC;
-//                    double p2 = nodes_list[adj_idx]->bbx.angleFromY_LC_opp - cur_node->bbx.angleFromY_LC;
-//                    nodes_list[adj_idx]->bbx.angleFromParent = abs(p1) < abs(p2) ? p1 : p2;
-//                    children_list.push_back(nodes_list[adj_idx]);
-//                    visited[adj_idx] = true;
-//                }
-//            }
-//
-//            std::sort(children_list.begin(), children_list.end(), Nary_GreaterSort);
-//            int main_branch_idx = -1; // we find which child should be the main branch
-//            double min_abs_anbgle = 10000;
-//            for (int i = 0; i < children_list.size(); i++) {
-//                if (abs(children_list[i]->bbx.angleFromParent) < m_mianBranchAngle_thrs) {
-//                    if (abs(children_list[i]->bbx.angleFromParent) < min_abs_anbgle) {
-//                        min_abs_anbgle = abs(children_list[i]->bbx.angleFromParent);
-//                        main_branch_idx = i;
-//                    }
-//                }
-//            }
-//
-//            for (int i = 0; i < children_list.size(); i++) {
-//                if (i == main_branch_idx) {
-//                    children_list[i]->main_branch = true;
-//                    children_list[i]->turn_indicator = "0";
-//                }
-//                else if (children_list[i]->bbx.angleFromParent > 0) {
-//                    children_list[i]->turn_indicator = "1";
-//                }
-//                else if (children_list[i]->bbx.angleFromParent < 0) {
-//                    children_list[i]->turn_indicator = "-1";
-//                }
-//                ConnectTreeNodes(cur_node, children_list[i]);
-//                qt.push(cur_node->children[i]);
-//            }
-//        }
-//    }
-//}
+void ImportImageCmd::processBoundingBox(Bounding_box_parse& bbx) {
+    // Process and manipulate bounding box as necessary
+    // This could involve setting up relationships, computing additional properties, etc.
+}
+
+void ImportImageCmd::buildNaryTree() {
+    std::vector<Nary_TreeNode*> nodes_list;
+    std::vector<bool> visited;
+    std::vector<int> parents;
+    //build tree nodes
+    for (int i = 0; i < m_bbx_parse.size(); i++) {
+        Bounding_box_parse cur_bbx = m_bbx_parse[i];
+        Nary_TreeNode* cur_node = CreateNaryTreeNode(m_bbx_parse[i]);
+        cur_node->bbx_index = i + 1;
+        nodes_list.push_back(cur_node);
+        visited.push_back(false);
+    }
+    //consturct the tree
+    Nary_TreeNode* root_node = nodes_list[m_root_id];
+    root_node->bbx.angleFromParent = root_node->bbx.angleFromY_LC;
+    visited[m_root_id] = true;
+
+    queue<Nary_TreeNode*> qt;
+    qt.push(root_node);
+    typedef boost::property_map<UndirectedGraph, boost::vertex_index_t>::type IndexMap;
+    IndexMap index = get(boost::vertex_index, m_graph);
+
+    while (!qt.empty()) {
+        Nary_TreeNode* cur_node = qt.front();
+        qt.pop();
+        if (cur_node) {
+            UndirectedGraph::adjacency_iterator vit, vend;
+            std::vector<Nary_TreeNode*> children_list;
+            for (std::tie(vit, vend) = boost::adjacent_vertices(cur_node->bbx_index - 1, m_graph); vit != vend; ++vit) {
+                int adj_idx = index[*vit];
+                if (!visited[adj_idx]) {
+                    double p1 = nodes_list[adj_idx]->bbx.angleFromY_LC - cur_node->bbx.angleFromY_LC;
+                    double p2 = nodes_list[adj_idx]->bbx.angleFromY_LC_opp - cur_node->bbx.angleFromY_LC;
+                    nodes_list[adj_idx]->bbx.angleFromParent = abs(p1) < abs(p2) ? p1 : p2;
+                    children_list.push_back(nodes_list[adj_idx]);
+                    visited[adj_idx] = true;
+                }
+            }
+
+            std::sort(children_list.begin(), children_list.end(), Nary_GreaterSort);
+            int main_branch_idx = -1; // we find which child should be the main branch
+            double min_abs_anbgle = 10000;
+            for (int i = 0; i < children_list.size(); i++) {
+                if (abs(children_list[i]->bbx.angleFromParent) < m_mianBranchAngle_thrs) {
+                    if (abs(children_list[i]->bbx.angleFromParent) < min_abs_anbgle) {
+                        min_abs_anbgle = abs(children_list[i]->bbx.angleFromParent);
+                        main_branch_idx = i;
+                    }
+                }
+            }
+
+            for (int i = 0; i < children_list.size(); i++) {
+                if (i == main_branch_idx) {
+                    children_list[i]->main_branch = true;
+                    children_list[i]->turn_indicator = "0";
+                }
+                else if (children_list[i]->bbx.angleFromParent > 0) {
+                    children_list[i]->turn_indicator = "1";
+                }
+                else if (children_list[i]->bbx.angleFromParent < 0) {
+                    children_list[i]->turn_indicator = "-1";
+                }
+                ConnectTreeNodes(cur_node, children_list[i]);
+                qt.push(cur_node->children[i]);
+            }
+        }
+    }
+    MGlobal::displayInfo(MString("Build tree done! The initial tree: "));
+    Nary_print_tree(root_node, 0);
+}

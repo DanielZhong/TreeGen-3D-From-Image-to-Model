@@ -11,6 +11,20 @@
 #include <maya/MSyntax.h>
 #include "tree_structure.h"
 
+#include <boost/graph/adjacency_list.hpp>
+#include <boost/graph/breadth_first_search.hpp>
+#include <boost/graph/dijkstra_shortest_paths.hpp>
+#include <boost/property_map/property_map.hpp>
+#include <boost/graph/kruskal_min_spanning_tree.hpp>
+#include <boost/graph/prim_minimum_spanning_tree.hpp>
+#include <boost/pending/indirect_cmp.hpp>
+#include <boost/range/irange.hpp>
+
+typedef boost::property<boost::edge_weight_t, double> EdgeWeightProperty;
+typedef boost::adjacency_list<boost::listS, boost::vecS, boost::undirectedS, boost::no_property, EdgeWeightProperty> UndirectedGraph;
+typedef boost::graph_traits<UndirectedGraph>::edge_iterator edge_iterator;
+typedef boost::graph_traits<UndirectedGraph>::vertex_descriptor vertex_t;
+typedef boost::graph_traits<UndirectedGraph>::edge_descriptor edge_descriptor;
 
 class ImportImageCmd : public MPxCommand {
 public:
