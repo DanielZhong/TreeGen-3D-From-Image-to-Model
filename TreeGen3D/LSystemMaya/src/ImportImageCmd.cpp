@@ -507,16 +507,14 @@ void ImportImageCmd::buildGraph() {
     MGlobal::displayInfo("Edge list:");
 
     for (auto it = ei.first; it != ei.second; ++it) {
-        // Assuming *it gives you an edge descriptor that you can somehow convert to string or identifier
         MGlobal::displayInfo(toMString(*it));
     }
 
     // Adjacency iteration for a vertex, example vertex id '2' is used here
     UndirectedGraph::adjacency_iterator vit, vend;
-    std::tie(vit, vend) = boost::adjacent_vertices(2, m_graph); // Assuming Boost-like functions
+    std::tie(vit, vend) = boost::adjacent_vertices(2, m_graph);
     MGlobal::displayInfo("Adjacent vertices to vertex 2:");
     for (; vit != vend; ++vit) {
-        // Assuming *vit gives you a vertex descriptor that you can convert to string or identifier
         MGlobal::displayInfo(toMString(*vit));
     }
 
