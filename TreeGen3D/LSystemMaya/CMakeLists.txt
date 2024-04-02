@@ -11,29 +11,24 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
 # Add source files to the project
 file(GLOB_RECURSE R2_SOURCES "${PROJECT_SOURCE_DIR}/src/R2/*.cpp")
-list(APPEND R2SOURCES ${R2_SOURCES})
-
 file(GLOB_RECURSE R3_SOURCES "${PROJECT_SOURCE_DIR}/src/R3/*.cpp")
-list(APPEND R3SOURCES ${R3_SOURCES})
 
 set(SOURCES
-src/cylinder.cpp
-${LSystem_SOURCE_DIR}/LSystem.cpp
-src/LSystemCmd.cpp
-src/PluginMain.cpp
-src/LSystemNode.cpp
-src/ImportImageCmd.cpp
-src/tree_structure.cpp
-${LSystem_SOURCE_DIR}/vec.cpp
+    src/cylinder.cpp
+    ${LSystem_SOURCE_DIR}/LSystem.cpp
+    src/LSystemCmd.cpp
+    src/PluginMain.cpp
+    src/LSystemNode.cpp
+    src/ImportImageCmd.cpp
+    src/tree_structure.cpp
+    ${LSystem_SOURCE_DIR}/vec.cpp
+    ${R2_SOURCES}
+    ${R3_SOURCES}
 )
-
 
 # Add header files to the project
 file(GLOB_RECURSE R2_HEADERS "${PROJECT_SOURCE_DIR}/src/R2/*.h")
-list(APPEND R2HEADERS ${R2_HEADERS})
-
 file(GLOB_RECURSE R3_HEADERS "${PROJECT_SOURCE_DIR}/src/R3/*.h")
-list(APPEND R3HEADERS ${R3_HEADERS})
 
 set(HEADERS
     src/cylinder.h
@@ -44,7 +39,15 @@ set(HEADERS
     src/tree_structure.h
     ${LSystem_SOURCE_DIR}/matrix.h
     ${LSystem_SOURCE_DIR}/vec.h
+    ${R2_HEADERS}
+    ${R3_HEADERS}
 )
+
+# Organize the source and header files in IDE
+source_group("Source Files\\R2" FILES ${R2_SOURCES})
+source_group("Header Files\\R2" FILES ${R2_HEADERS})
+source_group("Source Files\\R3" FILES ${R3_SOURCES})
+source_group("Header Files\\R3" FILES ${R3_HEADERS})
 
 find_package(Maya REQUIRED)
 

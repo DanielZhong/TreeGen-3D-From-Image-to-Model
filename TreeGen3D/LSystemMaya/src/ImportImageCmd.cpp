@@ -1,5 +1,6 @@
 //#include "LSystemCmd.h"
 #include "ImportImageCmd.h"
+#include "tree_structure.h"
 #include <maya/MGlobal.h>
 #include <fstream>
 #include <sstream>
@@ -7,6 +8,23 @@
 #include <map>
 #include <maya/MVector.h>
 #include <cmath>
+
+inline double angleFromY_LC(R2Vector dir) // anticlockwise is positive
+{
+    dir.Normalize();
+    float fAngle = acos(dir.Y());
+    /*if (dir.X() < 0)
+    {
+    fAngle = 2 * M_PI - fAngle;
+    }
+    return -fAngle;*/
+
+    if (dir.X() > 0)
+    {
+        fAngle = -fAngle;
+    }
+    return fAngle;
+}
 
 ImportImageCmd::ImportImageCmd() {}
 
@@ -96,9 +114,55 @@ MStatus ImportImageCmd::parseBoundingBoxData(const std::string& filepath) {
         std::string class_name;
         float score, x_c, y_c, w, h, angle;
         if (iss >> class_name >> score >> x_c >> y_c >> w >> h >> angle) {
+            Bounding_box_parse bbx;
+            bbx.center_position = R2Vector(x_c, y_c);
+            bbx.label_id = get_class_id(class_name);
+
+            // Adjust width, height, and angle based on orientation
+            if (w > h) {
+                bbx.width = h;
+                bbx.height = w;
+                bbx.angleFromY = -angle + 90;  // Adjusting angle based on orientation
+            }
+            else {
+                bbx.width = w;
+                bbx.height = h;
+                bbx.angleFromY = -angle;  // No additional rotation needed
+            }
+
+            MVector center(x_c, y_c, 0.0);
+            MVector ltc(-bbx.width * 0.5, -bbx.height * 0.5, 0.0);
+            MVector rtc(bbx.width * 0.5, -bbx.height * 0.5, 0.0);
+            MVector rbc(bbx.width * 0.5, bbx.height * 0.5, 0.0);
+            MVector lbc(-bbx.width * 0.5, bbx.height * 0.5, 0.0);
+            MVector dir(0.0, 1.0, 0.0);
+
+            ltc = my_rotate(ltc, angle);
+            rtc = my_rotate(rtc, angle);
+            rbc = my_rotate(rbc, angle);
+            lbc = my_rotate(lbc, angle);
+            dir = my_rotate(dir, angle);
+
+            bbx.l_t_corner = R2Vector(ltc[0], ltc[1]);
+            bbx.r_t_corner = R2Vector(rtc[0], rtc[1]);
+            bbx.r_b_corner = R2Vector(rbc[0], rbc[1]);
+            bbx.l_b_corner = R2Vector(lbc[0], lbc[1]);
+            bbx.direction = R2Vector(dir[0], dir[1]);
+            bbx.direction_opp = R2Vector(-dir[0], -dir[1]);
+
+            bbx.center_position_LC = R2Vector(bbx.center_position.X(), -bbx.center_position.Y());
+            bbx.l_t_corner_LC = R2Vector(bbx.l_t_corner.X(), -bbx.l_t_corner.Y());
+            bbx.r_t_corner_LC = R2Vector(bbx.r_t_corner.X(), -bbx.r_t_corner.Y());
+            bbx.r_b_corner_LC = R2Vector(bbx.r_b_corner.X(), -bbx.r_b_corner.Y());
+            bbx.l_b_corner_LC = R2Vector(bbx.l_b_corner.X(), -bbx.l_b_corner.Y());
+            bbx.direction_LC = R2Vector(bbx.direction.X(), -bbx.direction.Y());
+            bbx.direction_LC_opp = R2Vector(bbx.direction_opp.X(), -bbx.direction_opp.Y());
+            //bbx.angleFromY_LC = std::min(0.0, std::abs(RAD2DEG(angleFromY_LC(bbx.direction_LC))));
+            bbx.angleFromY_LC = RAD2DEG(angleFromY_LC(bbx.direction_LC));
+            bbx.angleFromY_LC_opp = RAD2DEG(angleFromY_LC(bbx.direction_LC_opp));
+
             // Process each bounding box
             MGlobal::displayInfo(MString("Processed bbox for class: ") + class_name.c_str());
-            // Here, add your logic to handle each bounding box, e.g., creating annotations in Maya
         }
     }
 
