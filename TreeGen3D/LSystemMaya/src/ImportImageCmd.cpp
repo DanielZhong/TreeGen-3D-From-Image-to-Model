@@ -12,6 +12,11 @@
 #include <iostream>
 #include <iomanip>
 
+//#include <boost/graph/breadth_first_search.hpp>
+//#include <boost/graph/dijkstra_shortest_paths.hpp>
+//#include <boost/property_map/property_map.hpp>
+//#include <boost/graph/kruskal_min_spanning_tree.hpp>
+
 // ---------------------------------------------------------------------------------------------------------------------------------------------------
 // Helper Variable, 不知道为什么不让存到private里面，调取的时候找不到，只能放这里了。。。
 std::vector<Bounding_box_parse> m_bbx_parse;
