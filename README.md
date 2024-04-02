@@ -7,7 +7,12 @@
 
 2. in ImportImageCmd.cpp(the main logic), try move helper variables(at the very top) into private member variables
 
-3. Continue the remaining work
+3. tutrle.cpp and .h I adjusted some codes, becuase we don't have qmath from qt
+
+Continue the remaining work
+
+* Added files include: ImportImagecmd(main plugin logic), tree_structure, tutrle(adjusted), BOOST lib, udgcd_cycle_detector.hpp
+
 
 ## Reference:
 This project is inspired by the innovative approaches discussed in VCC's 2020 research on IPML. The study emphasizes the integration of IP (Intellectual Property) management with machine learning techniques to enhance the efficiency and effectiveness of IP-related tasks. For more details, visit [VCC Research on IPML](https://vcc.tech/research/2020/IPML).

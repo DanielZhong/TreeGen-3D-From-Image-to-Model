@@ -10,6 +10,8 @@
 #include <maya/MArgList.h>
 #include <maya/MSyntax.h>
 #include "tree_structure.h"
+#include "turtle.h"
+#include "udgcd_cycle_detector.hpp"
 
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/graph/breadth_first_search.hpp>
@@ -19,6 +21,7 @@
 #include <boost/graph/prim_minimum_spanning_tree.hpp>
 #include <boost/pending/indirect_cmp.hpp>
 #include <boost/range/irange.hpp>
+
 
 typedef boost::property<boost::edge_weight_t, double> EdgeWeightProperty;
 typedef boost::adjacency_list<boost::listS, boost::vecS, boost::undirectedS, boost::no_property, EdgeWeightProperty> UndirectedGraph;
@@ -34,9 +37,11 @@ public:
     static void* creator();
     static MSyntax newSyntax();
 
+    void processBoundingBox(Bounding_box_parse& bbx);
+    void buildGraph();
+
     MStatus parseBoundingBoxData(const std::string& filepath);
     void buildNaryTree();
-    void processBoundingBox(Bounding_box_parse& bbx);
 
 private:
     

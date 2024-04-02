@@ -21,6 +21,7 @@ set(SOURCES
     src/LSystemNode.cpp
     src/ImportImageCmd.cpp
     src/tree_structure.cpp
+    src/turtle.cpp
     ${LSystem_SOURCE_DIR}/vec.cpp
     ${R2_SOURCES}
     ${R3_SOURCES}
@@ -37,6 +38,7 @@ set(HEADERS
     src/LSystemNode.h
     src/ImportImageCmd.h
     src/tree_structure.h
+    src/turtle.h
     ${LSystem_SOURCE_DIR}/matrix.h
     ${LSystem_SOURCE_DIR}/vec.h
     ${R2_HEADERS}
@@ -58,6 +60,7 @@ target_include_directories(${PROJECT_NAME}
     PUBLIC ${LSystem_SOURCE_DIR}
     PRIVATE Maya::Maya
     PUBLIC "${CMAKE_CURRENT_BINARY_DIR}" "${CMAKE_CURRENT_SOURCE_DIR}"
+    PUBLIC "${PROJECT_SOURCE_DIR}/src/udgcd"
 )
 MAYA_PLUGIN(${PROJECT_NAME})
 

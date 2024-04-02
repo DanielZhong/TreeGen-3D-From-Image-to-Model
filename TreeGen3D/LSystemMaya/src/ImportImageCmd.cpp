@@ -11,6 +11,10 @@
 #include <algorithm>
 #include <iostream>
 #include <iomanip>
+#include <maya/MPoint.h>
+#include <maya/MVector.h>
+#include <vector>
+#include <limits>
 
 //#include <boost/graph/breadth_first_search.hpp>
 //#include <boost/graph/dijkstra_shortest_paths.hpp>
@@ -20,12 +24,30 @@
 // ---------------------------------------------------------------------------------------------------------------------------------------------------
 // Helper Variable, 不知道为什么不让存到private里面，调取的时候找不到，只能放这里了。。。
 std::vector<Bounding_box_parse> m_bbx_parse;
-Nary_TreeNode* rootNode;
+Nary_TreeNode* rootNode = NULL; // Initialize pointers to NULL for safety
 std::string m_save_image_name;
 double m_min_len;
 int m_root_id;
 UndirectedGraph m_graph;
-double m_mianBranchAngle_thrs;
+
+bool m_show_tree = true;
+bool m_show_tree_render = false;
+bool m_render = false;
+int m_image_id = 0;
+bool m_show_image = false;
+bool m_showSampledPoints = false;
+double m_line_thickness = 2.0;
+double m_rotate_angle = 0.0;
+double scale_factor_ = 14.0; // Ensure consistency in naming convention (e.g., m_scaleFactor)
+double m_scale = 1.0;
+double m_center_x = 0.0;
+double m_center_y = 0.0;
+int m_bbxID = -1;
+double m_weight_thrs = 1.0;
+double m_centerDis_thrs = 1.0; // Value retained as specified
+double m_cornerDis_thrs = 0.1;
+double m_mianBranchAngle_thrs = 5.0; // Value retained as specified, but consider correcting the spelling to "m_mainBranchAngle_thrs"
+std::string m_optAlgorithm_ = "Our";
 
 
 // Helper Functions
@@ -105,6 +127,176 @@ void Nary_print_tree(Nary_TreeNode* root, int spaces) {
     }
 }
 
+struct pairwise_bbx {
+    int i, j;
+    double weight;
+    pairwise_bbx(int x, int y, double dis) : weight(dis) {
+        i = (x < y) ? x : y;
+        j = (x < y) ? y : x;
+    }
+    bool operator==(const pairwise_bbx b) const {
+        return (i == b.i && j == b.j);
+    }
+
+    bool operator <(const pairwise_bbx& b) const {
+        bool flag = (i < b.i) || (!(i < b.i) && (j < b.j));
+        return flag;
+    }
+
+    bool operator () (const pairwise_bbx& b) const {
+        return (i == b.i && j == b.j);
+    }
+};
+
+bool check_bbox_intersect(Bounding_box_parse b1, Bounding_box_parse b2) {
+    bool is_intersect = false;
+
+    // first, do a very fast check to remove most of the cases
+    double distance = (b1.center_position_LC - b2.center_position_LC).Length();
+    if (distance > 2.3 * b1.height && distance > 2.3 * b2.height) {
+        return false;
+    }
+
+    //second, hadnle the tangency case
+    t_line b1_lines[4] = { t_line(b1.l_t_corner_LC, b1.r_t_corner_LC), t_line{b1.r_t_corner_LC, b1.r_b_corner_LC},
+                           t_line(b1.r_b_corner_LC, b1.l_b_corner_LC), t_line(b1.l_b_corner_LC, b1.l_t_corner_LC) };
+    t_line b2_lines[4] = { t_line(b2.l_t_corner_LC, b2.r_t_corner_LC), t_line{b2.r_t_corner_LC, b2.r_b_corner_LC },
+                           t_line(b2.r_b_corner_LC, b2.l_b_corner_LC), t_line(b2.l_b_corner_LC, b2.l_t_corner_LC) };
+    for (int i = 0; i < 4; i++) {
+        t_line e1 = b1_lines[i];
+        for (int j = 0; j < 4; j++) {
+            t_line e2 = b2_lines[j];
+            if (((e1.p_start - e2.p_start).Length() < 0.15 * b1.width && (e1.p_end - e2.p_end).Length() < 0.15 * b1.width) ||
+                ((e1.p_start - e2.p_end).Length() < 0.15 * b1.width && (e1.p_end - e2.p_start).Length() < 0.15 * b1.width)) {
+                return true;
+            }
+            R2Vector mid1 = (e1.p_start + e1.p_end) * 0.5;
+            R2Vector mid2 = (e2.p_start + e2.p_end) * 0.5;
+            if ((mid1 - mid2).Length() < 0.15 * b1.width) {
+                return true;
+            }
+        }
+    }
+
+    // Convert Bounding_box_parse corners to MPoint vectors for polygon representation
+    std::vector<MPoint> polygonA = {
+        MPoint(b1.l_t_corner_LC.X(), b1.l_t_corner_LC.Y(), 0.0),
+        MPoint(b1.r_t_corner_LC.X(), b1.r_t_corner_LC.Y(), 0.0),
+        MPoint(b1.r_b_corner_LC.X(), b1.r_b_corner_LC.Y(), 0.0),
+        MPoint(b1.l_b_corner_LC.X(), b1.l_b_corner_LC.Y(), 0.0)
+    };
+
+    std::vector<MPoint> polygonB = {
+        MPoint(b2.l_t_corner_LC.X(), b2.l_t_corner_LC.Y(), 0.0),
+        MPoint(b2.r_t_corner_LC.X(), b2.r_t_corner_LC.Y(), 0.0),
+        MPoint(b2.r_b_corner_LC.X(), b2.r_b_corner_LC.Y(), 0.0),
+        MPoint(b2.l_b_corner_LC.X(), b2.l_b_corner_LC.Y(), 0.0)
+    };
+
+    // Separating Axis Theorem (SAT) for polygon intersection
+    for (int polyi = 0; polyi < 2; ++polyi) {
+        const auto& polygon = polyi == 0 ? polygonA : polygonB;
+
+        for (size_t i1 = 0; i1 < polygon.size(); ++i1) {
+            size_t i2 = (i1 + 1) % polygon.size();
+
+            MVector normal(polygon[i2].y - polygon[i1].y, polygon[i1].x - polygon[i2].x, 0.0);
+
+            double minA = std::numeric_limits<double>::max();
+            double maxA = -std::numeric_limits<double>::max();
+            for (const auto& point : polygonA) {
+                double projected = (point.x * normal.x + point.y * normal.y);
+                minA = std::min(minA, projected);
+                maxA = std::max(maxA, projected);
+            }
+
+            double minB = std::numeric_limits<double>::max();
+            double maxB = -std::numeric_limits<double>::max();
+            for (const auto& point : polygonB) {
+                double projected = (point.x * normal.x + point.y * normal.y);
+                minB = std::min(minB, projected);
+                maxB = std::max(maxB, projected);
+            }
+
+            if (maxA < minB || maxB < minA)
+                return false; // No overlap found on this axis
+        }
+    }
+
+    return true; // Overlap found on all axes, polygons intersect
+}
+
+double compute_relative_distance(Bounding_box_parse b1, Bounding_box_parse b2) {
+
+    double pair_weight = 100;
+    double max_height = (b1.height > b2.height) ? b1.height : b2.height;
+    // first, do a very fast check to remove most of the cases
+    double cc_distance = (b1.center_position_LC - b2.center_position_LC).Length();
+    if (cc_distance > m_centerDis_thrs * max_height) {
+        //if (cc_distance > (1.0 * (b1.height + b2.height))){
+        return pair_weight;
+    }
+
+    //second, do another check by using bbx corners to remove some cases
+    bool intersect = check_bbox_intersect(b1, b2);
+    if (!intersect) {
+        t_line b1_lines[4] = { t_line(b1.l_t_corner_LC, b1.r_t_corner_LC), t_line{ b1.r_t_corner_LC, b1.r_b_corner_LC },
+            t_line(b1.r_b_corner_LC, b1.l_b_corner_LC), t_line(b1.l_b_corner_LC, b1.l_t_corner_LC) };
+        t_line b2_lines[4] = { t_line(b2.l_t_corner_LC, b2.r_t_corner_LC), t_line{ b2.r_t_corner_LC, b2.r_b_corner_LC },
+            t_line(b2.r_b_corner_LC, b2.l_b_corner_LC), t_line(b2.l_b_corner_LC, b2.l_t_corner_LC) };
+
+        double min_dis = 10000;
+        for (int i = 0; i < 4; i++) {
+            t_line e1 = b1_lines[i];
+            for (int j = 0; j < 4; j++) {
+                t_line e2 = b2_lines[j];
+                min_dis = std::min(min_dis, (e1.p_start - e2.p_start).Length());
+                min_dis = std::min(min_dis, (e1.p_end - e2.p_end).Length());
+                min_dis = std::min(min_dis, (e1.p_start - e2.p_end).Length());
+                min_dis = std::min(min_dis, (e1.p_end - e2.p_start).Length());
+
+                R2Vector mid1 = (e1.p_start + e1.p_end) * 0.5;
+                R2Vector mid2 = (e2.p_start + e2.p_end) * 0.5;
+                min_dis = std::min(min_dis, (mid1 - mid2).Length());
+            }
+        }
+        if (min_dis > m_cornerDis_thrs * max_height) {
+            return pair_weight;
+        }
+    }
+
+    ////third, if the angle between two boxes are very large, we remove it
+    //double dot_value = b1.direction_LC.Dot(b2.direction_LC);
+    //double cos_value = dot_value / (b1.direction_LC.Length() * b2.direction_LC.Length());
+    //double angle = RAD2DEG(std::acos(cos_value));
+    //if (angle > 90.0){
+    //	return pair_weight;
+    //}
+
+    // we compute the relative distance 
+    R2Vector b2_to_b1 = (b1.center_position_LC - b2.center_position_LC);
+    //b2_to_b1.Normalize();
+    R2Vector b1_to_b2 = (b2.center_position_LC - b1.center_position_LC);
+    //b1_to_b2.Normalize();
+    R2Vector projection_vec_on_b1 = b2_to_b1;
+    R2Vector projection_vec_on_b2 = b1_to_b2;
+    projection_vec_on_b1.Project(b1.direction_LC);
+    projection_vec_on_b2.Project(b2.direction_LC);
+    double projection_dis_on_b1 = projection_vec_on_b1.Length();
+    double projection_dis_on_b2 = projection_vec_on_b2.Length();
+
+    pair_weight = std::abs((projection_dis_on_b1 + projection_dis_on_b2) - (b1.height + b2.height)) / (0.5 * (b1.height + b2.height));
+
+    return pair_weight;
+}
+
+template <typename T>
+MString toMString(const T& value) {
+    std::stringstream ss;
+    ss << value;
+    return MString(ss.str().c_str());
+}
+
 // ---------------------------------------------------------------------------------------------------------------------------------------------------
 // Constructor & Deconstructor & Creator & Input Syntax
 ImportImageCmd::ImportImageCmd() {}
@@ -145,13 +337,16 @@ MStatus ImportImageCmd::doIt(const MArgList& args) {
     MGlobal::displayInfo(infoMsg);
 
 
+    parseBoundingBoxData(filepath.asChar());
+    buildGraph();
+    //buildNaryTree();
 
-
-    // Call the helper function with the file path
-    return parseBoundingBoxData(filepath.asChar());
+    /*return parseBoundingBoxData(filepath.asChar());*/
     return MS::kSuccess;
 }
 
+// ---------------------------------------------------------------------------------------------------------------------------------------------------
+// Main Functions
 MStatus ImportImageCmd::parseBoundingBoxData(const std::string& filepath) {
     m_save_image_name = filepath;
     m_save_image_name.replace(m_save_image_name.end() - 4, m_save_image_name.end(), "_bbx.jpg");
@@ -229,16 +424,103 @@ MStatus ImportImageCmd::parseBoundingBoxData(const std::string& filepath) {
 
             // Process each bounding box
             //MGlobal::displayInfo(MString("Processed bbox for class: ") + class_name.c_str());
-
-            //buildNaryTree();
         }
     }
     inFile.close();
+
+    // Test
     /*for (size_t i = 0; i < m_bbx_parse.size(); ++i) {
         const auto& bbx = m_bbx_parse[i];
         MGlobal::displayInfo(MString("BBX ") + std::to_string(i + 1).c_str() + ": Center (" + std::to_string(bbx.center_position.X()).c_str() + ", " + std::to_string(bbx.center_position.Y()).c_str() + "), Width: " + std::to_string(bbx.width).c_str() + ", Height: " + std::to_string(bbx.height).c_str() + ", Angle: " + std::to_string(bbx.angleFromY).c_str());
     }*/
     return MS::kSuccess;
+}
+
+//build the graph structure
+void ImportImageCmd::buildGraph() {
+    m_graph.clear();
+
+    std::vector<int> nodes_list;
+    std::vector<bool> visited;
+    m_root_id = 0;
+    double min_y = 100000;
+    //build tree nodes
+    std::vector<pairwise_bbx> adjenct_bbx;
+    std::cout << "number of BBX: " << m_bbx_parse.size() << std::endl;
+    for (int i = 0; i < m_bbx_parse.size(); i++) {
+        Bounding_box_parse cur_bbx = m_bbx_parse[i];
+
+        //std::cout << "i: " << i << std::endl;
+        for (int j = 0; j < m_bbx_parse.size(); j++) {
+            if (i == j) continue;
+            //std::cout << "j: " << j << std::endl;
+            bool intersect = check_bbox_intersect(m_bbx_parse[i], m_bbx_parse[j]);
+            double pair_weight = compute_relative_distance(m_bbx_parse[i], m_bbx_parse[j]);
+
+            //if (intersect){
+            //	//boost::add_edge(i, j, 0.0, m_graph);
+            //	pairwise_bbx pb(i, j, 0.0);
+            //	if (std::find(adjenct_bbx.begin(), adjenct_bbx.end(), pb) == adjenct_bbx.end()){
+            //		adjenct_bbx.push_back(pb);
+            //	}
+            //	std::cout << "True: " << pair_weight << std::endl;
+            //}
+            //else{
+            //	std::cout << "False: " << pair_weight << std::endl;
+            //}
+
+            if (pair_weight < m_weight_thrs) {
+                //boost::add_edge(i, j, 0.0, m_graph);
+                pairwise_bbx pb(i, j, pair_weight);
+                if (std::find(adjenct_bbx.begin(), adjenct_bbx.end(), pb) == adjenct_bbx.end()) {
+                    adjenct_bbx.push_back(pb);
+                }
+                //std::cout << "True: " << intersect << std::endl;
+            }
+            else {
+                //std::cout << "False: " << intersect << std::endl;
+            }
+
+        }
+        if (m_bbx_parse[i].center_position_LC.Y() < min_y) {
+            min_y = m_bbx_parse[i].center_position_LC.Y();
+            m_root_id = i;
+        }
+        nodes_list.push_back(i);
+        visited.push_back(false);
+    }
+
+    for (int i = 0; i < adjenct_bbx.size(); i++) {
+        pairwise_bbx cur_pb = adjenct_bbx[i];
+        boost::add_edge(cur_pb.i, cur_pb.j, cur_pb.weight, m_graph);
+    }
+
+    std::vector<std::vector<vertex_t>> cycles = udgcd::FindCycles<UndirectedGraph, vertex_t>(m_graph);
+    udgcd::PrintPaths(std::cout, cycles);
+
+
+    MGlobal::displayInfo(MString("Build graph done!"));
+
+    // print and test
+    auto ei = edges(m_graph); // Assuming this function exists and returns a pair of iterators
+    MGlobal::displayInfo("Number of edges = " + toMString(num_edges(m_graph)));
+    MGlobal::displayInfo("Edge list:");
+
+    for (auto it = ei.first; it != ei.second; ++it) {
+        // Assuming *it gives you an edge descriptor that you can somehow convert to string or identifier
+        MGlobal::displayInfo(toMString(*it));
+    }
+
+    // Adjacency iteration for a vertex, example vertex id '2' is used here
+    UndirectedGraph::adjacency_iterator vit, vend;
+    std::tie(vit, vend) = boost::adjacent_vertices(2, m_graph); // Assuming Boost-like functions
+    MGlobal::displayInfo("Adjacent vertices to vertex 2:");
+    for (; vit != vend; ++vit) {
+        // Assuming *vit gives you a vertex descriptor that you can convert to string or identifier
+        MGlobal::displayInfo(toMString(*vit));
+    }
+
+    //build_NaryTree();
 }
 
 void ImportImageCmd::processBoundingBox(Bounding_box_parse& bbx) {
