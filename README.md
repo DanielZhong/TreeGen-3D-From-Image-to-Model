@@ -15,6 +15,14 @@
 
 * Added files include: ImportImagecmd(main plugin logic), tree_structure, tutrle(adjusted), BOOST lib, udgcd_cycle_detector.hpp
 
+* in ImportImagecmd.cpp doIt() is the main function, the main helper functions include(4 buttons in QT):  
+
+MStatus parseBoundingBoxData(const std::string& filepath); (Button1)
+void buildGraph(); (Button2)
+void removeCycles(); (Button3)
+void extractMinimalSpanningTree(); (Button3)
+void buildNaryTree(); (Button4)
+
 *  tutrle.cpp and .h I adjusted some codes, becuase we don't have qmath from qt (adjusted M_PI implmentation, and Changed qrand() to std::rand())
 
 * tested: QT Project generated grammar can work in project 2
