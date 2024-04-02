@@ -16,13 +16,15 @@
 #include <vector>
 #include <limits>
 
-//#include <boost/graph/breadth_first_search.hpp>
-//#include <boost/graph/dijkstra_shortest_paths.hpp>
-//#include <boost/property_map/property_map.hpp>
-//#include <boost/graph/kruskal_min_spanning_tree.hpp>
+#define Debug_parseBoundingBoxData 0
+#define Debug_buildGraph 1
+#define Debug_removeCycles 1
+#define Debug_extractMinimalSpanningTree 1
+#define Debug_buildNaryTree 1
 
 // ---------------------------------------------------------------------------------------------------------------------------------------------------
-// Helper Variable, 不知道为什么不让存到private里面，调取的时候找不到，只能放这里了。。。
+// Helper Variable
+// TODO:: 不知道为什么不让存到private里面，调取的时候找不到，只能放这里了。。。
 std::vector<Bounding_box_parse> m_bbx_parse;
 Nary_TreeNode* rootNode = NULL; // Initialize pointers to NULL for safety
 std::string m_save_image_name;
@@ -338,15 +340,17 @@ MStatus ImportImageCmd::doIt(const MArgList& args) {
 
 
     parseBoundingBoxData(filepath.asChar());
-    buildGraph();
-    //buildNaryTree();
+    buildGraph(); // TODO: print出来的data不对，有bug
 
-    /*return parseBoundingBoxData(filepath.asChar());*/
+    removeCycles();
+    extractMinimalSpanningTree();
+    buildNaryTree();
+
     return MS::kSuccess;
 }
 
 // ---------------------------------------------------------------------------------------------------------------------------------------------------
-// Main Functions
+// Main Logics Functions
 MStatus ImportImageCmd::parseBoundingBoxData(const std::string& filepath) {
     m_save_image_name = filepath;
     m_save_image_name.replace(m_save_image_name.end() - 4, m_save_image_name.end(), "_bbx.jpg");
@@ -429,10 +433,12 @@ MStatus ImportImageCmd::parseBoundingBoxData(const std::string& filepath) {
     inFile.close();
 
     // Test
-    /*for (size_t i = 0; i < m_bbx_parse.size(); ++i) {
+#if Debug_parseBoundingBoxData
+    for (size_t i = 0; i < m_bbx_parse.size(); ++i) {
         const auto& bbx = m_bbx_parse[i];
         MGlobal::displayInfo(MString("BBX ") + std::to_string(i + 1).c_str() + ": Center (" + std::to_string(bbx.center_position.X()).c_str() + ", " + std::to_string(bbx.center_position.Y()).c_str() + "), Width: " + std::to_string(bbx.width).c_str() + ", Height: " + std::to_string(bbx.height).c_str() + ", Angle: " + std::to_string(bbx.angleFromY).c_str());
-    }*/
+    }
+#endif
     return MS::kSuccess;
 }
 
@@ -502,6 +508,7 @@ void ImportImageCmd::buildGraph() {
     MGlobal::displayInfo(MString("Build graph done!"));
 
     // print and test
+#if Debug_buildGraph
     auto ei = edges(m_graph); // Assuming this function exists and returns a pair of iterators
     MGlobal::displayInfo("Number of edges = " + toMString(num_edges(m_graph)));
     MGlobal::displayInfo("Edge list:");
@@ -517,13 +524,147 @@ void ImportImageCmd::buildGraph() {
     for (; vit != vend; ++vit) {
         MGlobal::displayInfo(toMString(*vit));
     }
-
-    //build_NaryTree();
+#endif
 }
 
-void ImportImageCmd::processBoundingBox(Bounding_box_parse& bbx) {
-    // Process and manipulate bounding box as necessary
-    // This could involve setting up relationships, computing additional properties, etc.
+void ImportImageCmd::removeCycles() {
+    int iters = 0;
+    bool has_cycles = false;
+    do {
+        //find cycles
+        std::vector<std::vector<vertex_t>> cycles = udgcd::FindCycles<UndirectedGraph, vertex_t>(m_graph);
+        if (cycles.size() == 0) break;
+#if Debug_removeCycles
+        MGlobal::displayInfo("Cycles number: " + MString() + cycles.size());
+        udgcd::PrintPaths(std::cout, cycles);
+#endif
+        has_cycles = true;
+        iters++;
+
+        // Create property_map from edges to weights
+        boost::property_map<UndirectedGraph, boost::edge_weight_t>::type weightmap = get(boost::edge_weight, m_graph);
+        std::vector<vertex_t> p(boost::num_vertices(m_graph));
+        std::vector<double> d(num_vertices(m_graph));
+        boost::dijkstra_shortest_paths(m_graph, m_root_id, boost::predecessor_map(&p[0]).distance_map(&d[0]));
+
+        //break cycles
+        for (int i = 0; i < cycles.size(); i++) {
+
+            if (cycles[i].size() == 3) {
+                double min_distance = 10000;
+                int indx;
+                for (int k = 0; k < 3; k++) {
+                    int goal = cycles[i][k];
+                    std::vector<int> nodes;
+                    double real_dis = 0;
+                    while (goal != m_root_id) {
+                        nodes.push_back(goal);
+                        real_dis += d[goal];
+                        goal = p[goal];
+                    }
+
+                    if (min_distance > nodes.size()) {
+                        //if (max_distance < real_dis){
+                        min_distance = nodes.size();
+                        //max_distance = real_dis;
+                        indx = k;
+                    }
+                }
+                if (indx == 0) {
+                    //int left = cycles[i][1], right = cycles[i][2];
+                    boost::remove_edge(cycles[i][1], cycles[i][2], m_graph);
+                }
+                else if (indx == 1) {
+                    boost::remove_edge(cycles[i][0], cycles[i][2], m_graph);
+                }
+                else {
+                    boost::remove_edge(cycles[i][0], cycles[i][1], m_graph);
+                }
+
+                continue;
+            }
+
+            std::vector<std::pair<int, int>> remove_edges;
+
+            for (int j = 0; j < cycles[i].size(); j++) {
+                int b_left, b_middle, b_right;
+                if (j == 0) {
+                    b_left = cycles[i][cycles[i].size() - 1], b_middle = cycles[i][j], b_right = cycles[i][j + 1];
+                }
+                else {
+                    b_left = cycles[i][j - 1], b_middle = cycles[i][j], b_right = cycles[i][(j + 1) % cycles[i].size()];
+                }
+                R2Vector bm_to_bl = m_bbx_parse[b_left].center_position_LC - m_bbx_parse[b_middle].center_position_LC;
+                R2Vector bm_to_br = m_bbx_parse[b_right].center_position_LC - m_bbx_parse[b_middle].center_position_LC;
+                double dot_value = bm_to_bl.Dot(bm_to_br);
+                double cos_value = dot_value / (bm_to_bl.Length() * bm_to_br.Length());
+                double angle_1 = RAD2DEG(std::acos(cos_value));
+                if (angle_1 < 90.0) {
+                    dot_value = m_bbx_parse[b_middle].direction_LC.Dot(m_bbx_parse[b_left].direction_LC);
+                    cos_value = dot_value / (m_bbx_parse[b_middle].direction_LC.Length() * m_bbx_parse[b_left].direction_LC.Length());
+                    double angle_left = RAD2DEG(std::acos(cos_value));
+
+                    dot_value = m_bbx_parse[b_middle].direction_LC.Dot(m_bbx_parse[b_right].direction_LC);
+                    cos_value = dot_value / (m_bbx_parse[b_middle].direction_LC.Length() * m_bbx_parse[b_right].direction_LC.Length());
+                    double angle_right = RAD2DEG(std::acos(cos_value));
+
+                    if (angle_left < angle_right) {
+                        remove_edges.push_back(std::make_pair(b_right, b_middle));
+                    }
+                    else {
+                        remove_edges.push_back(std::make_pair(b_left, b_middle));
+                    }
+                }
+            }
+
+            if (remove_edges.size() > 0) {
+                double max_distance = -10000;
+                int indx;
+
+                for (int k = 0; k < remove_edges.size(); k++) {
+                    int goal = remove_edges[k].second;
+                    std::vector<int> nodes;
+                    std::vector<float> distances;
+                    double real_dis = 0;
+                    while (goal != m_root_id) {
+                        nodes.push_back(goal);
+                        distances.push_back(d[goal]);
+                        real_dis += d[goal];
+                        goal = p[goal];
+                    }
+
+                    if (max_distance < nodes.size()) {
+                        //if (max_distance < real_dis){
+                        max_distance = nodes.size();
+                        //max_distance = real_dis;
+                        indx = k;
+                    }
+                }
+                boost::remove_edge(remove_edges[indx].first, remove_edges[indx].second, m_graph);
+            }
+        }
+
+    } while (has_cycles || iters < 5);
+#if Debug_removeCycles
+    MGlobal::displayInfo(MString("Break cycles done! Iters: ") + MString() + iters);
+#endif
+}
+
+void ImportImageCmd::extractMinimalSpanningTree() {
+    boost::property_map<UndirectedGraph, boost::edge_weight_t >::type weight = get(boost::edge_weight, m_graph);
+    std::vector<edge_descriptor> spanning_tree;
+
+    boost::kruskal_minimum_spanning_tree(m_graph, std::back_inserter(spanning_tree));
+
+    UndirectedGraph new_graph;
+    for (std::vector<edge_descriptor>::iterator ei = spanning_tree.begin();
+        ei != spanning_tree.end(); ++ei)
+    {
+        boost::add_edge(source(*ei, m_graph), target(*ei, m_graph), weight[*ei], new_graph);
+    }
+
+    m_graph.clear();
+    m_graph = new_graph;
 }
 
 void ImportImageCmd::buildNaryTree() {
@@ -593,6 +734,9 @@ void ImportImageCmd::buildNaryTree() {
             }
         }
     }
+#if Debug_buildNaryTree
     MGlobal::displayInfo(MString("Build tree done! The initial tree: "));
     Nary_print_tree(root_node, 0);
+#endif
+    // TODO: More codes here
 }

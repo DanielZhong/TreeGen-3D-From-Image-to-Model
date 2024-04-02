@@ -37,12 +37,12 @@ public:
     static void* creator();
     static MSyntax newSyntax();
 
-    void processBoundingBox(Bounding_box_parse& bbx);
-    void buildGraph();
-
     MStatus parseBoundingBoxData(const std::string& filepath);
+    void buildGraph();
+    void removeCycles();
+    void extractMinimalSpanningTree();
     void buildNaryTree();
-
+    
 private:
     
 };
