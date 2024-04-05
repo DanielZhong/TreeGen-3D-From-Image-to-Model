@@ -46,6 +46,7 @@ set(HEADERS
     src/ImportImageCmd.h
     src/tree_structure.h
     src/turtle.h
+    src/global_definations.h
     ${LSystem_SOURCE_DIR}/matrix.h
     ${LSystem_SOURCE_DIR}/vec.h
     ${R2_HEADERS}
