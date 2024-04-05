@@ -1459,67 +1459,58 @@ MStatus ImportImageCmd::doIt(const MArgList& args) {
 
 // ---------------------------------------------------------------------------------------------------------------------------------------------------
 // Main Logics Functions
-MStatus ImportImageCmd::parseBoundingBoxData(const std::string& filepath) {
-    m_save_image_name = filepath;
+void ImportImageCmd::parseBoundingBoxData(const std::string& filename) {
+
+    m_save_image_name = filename;
     m_save_image_name.replace(m_save_image_name.end() - 4, m_save_image_name.end(), "_bbx.jpg");
 
     m_bbx_parse.clear();
     m_min_len = 1000;
-
-    std::string bboxFilePath = filepath;
-    size_t lastdot = bboxFilePath.find_last_of(".");
-    if (lastdot != std::string::npos) bboxFilePath.replace(lastdot, bboxFilePath.length() - lastdot, ".txt");
-
-    std::ifstream inFile(bboxFilePath);
-    if (!inFile) {
-        MGlobal::displayError("Could not open the bounding box file.");
-        return MS::kFailure;
-    }
-
-    std::string line;
-    while (std::getline(inFile, line)) {
-        std::istringstream iss(line);
-        std::string class_name;
-        float score, x_c, y_c, w, h, angle;
-        if (iss >> class_name >> score >> x_c >> y_c >> w >> h >> angle) {
+    std::string bbox_name = filename;
+    bbox_name.replace(bbox_name.end() - 3, bbox_name.end(), "txt");
+    std::ifstream in(bbox_name.c_str());
+    string class_name;
+    float score, x_c, y_c, w, h, angle;
+    while (in) {
+        in >> class_name >> score >> x_c >> y_c >> w >> h >> angle;
+        if (in) {
             Bounding_box_parse bbx;
             bbx.center_position = R2Vector(x_c, y_c);
             bbx.label_id = get_class_id(class_name);
-
+            //here we make two strong assumptions about the rotation
             if (w > h) {
                 bbx.width = h;
-                bbx.height = w;
-                bbx.angleFromY = -angle + 90;
+                bbx.height = w; // +8;
+                bbx.angleFromY = -angle + 90; //in image coordinates, this angle is from Y-axis to the direction of this bbx  
                 bbx.angleFromY_opp = -(90 + angle);
             }
             else {
                 bbx.width = w;
-                bbx.height = h;
-                bbx.angleFromY = -angle - 180;
+                bbx.height = h; // +8;
+                bbx.angleFromY = -angle - 180; //-90-(180-90+angle)
                 bbx.angleFromY_opp = -angle;
             }
 
             m_min_len = std::min(m_min_len, bbx.height);
 
-            MVector center(x_c, y_c, 0.0);
-            MVector ltc(-bbx.width * 0.5, -bbx.height * 0.5, 0.0);
-            MVector rtc(bbx.width * 0.5, -bbx.height * 0.5, 0.0);
-            MVector rbc(bbx.width * 0.5, bbx.height * 0.5, 0.0);
-            MVector lbc(-bbx.width * 0.5, bbx.height * 0.5, 0.0);
-            MVector dir(0.0, 1.0, 0.0);
+            QPointF ltc(-bbx.width * 0.5, -bbx.height * 0.5);
+            QPointF rtc(bbx.width * 0.5, -bbx.height * 0.5);
+            QPointF rbc(bbx.width * 0.5, bbx.height * 0.5);
+            QPointF lbc(-bbx.width * 0.5, bbx.height * 0.5);
+            QPointF dir(0, 1);
 
-            ltc = my_rotate(ltc, angle);
-            rtc = my_rotate(rtc, angle);
-            rbc = my_rotate(rbc, angle);
-            lbc = my_rotate(lbc, angle);
-            dir = my_rotate(dir, angle);
+            ltc = my_rotate(ltc, bbx.angleFromY);
+            rtc = my_rotate(rtc, bbx.angleFromY);
+            rbc = my_rotate(rbc, bbx.angleFromY);
+            lbc = my_rotate(lbc, bbx.angleFromY);
+            dir = my_rotate(dir, bbx.angleFromY);
 
-            bbx.l_t_corner = R2Vector(ltc[0], ltc[1]);
-            bbx.r_t_corner = R2Vector(rtc[0], rtc[1]);
-            bbx.r_b_corner = R2Vector(rbc[0], rbc[1]);
-            bbx.l_b_corner = R2Vector(lbc[0], lbc[1]);
-            bbx.direction = R2Vector(dir[0], dir[1]);
-            bbx.direction_opp = R2Vector(-dir[0], -dir[1]);
+            bbx.l_t_corner = R2Vector(bbx.center_position.X() + ltc.x(), bbx.center_position.Y() + ltc.y());
+            bbx.r_t_corner = R2Vector(bbx.center_position.X() + rtc.x(), bbx.center_position.Y() + rtc.y());
+            bbx.r_b_corner = R2Vector(bbx.center_position.X() + rbc.x(), bbx.center_position.Y() + rbc.y());
+            bbx.l_b_corner = R2Vector(bbx.center_position.X() + lbc.x(), bbx.center_position.Y() + lbc.y());
+            bbx.direction = R2Vector(dir.x(), dir.y());
+            bbx.direction_opp = R2Vector(-dir.x(), -dir.y());
 
             bbx.center_position_LC = R2Vector(bbx.center_position.X(), -bbx.center_position.Y());
             bbx.l_t_corner_LC = R2Vector(bbx.l_t_corner.X(), -bbx.l_t_corner.Y());
@@ -1533,12 +1524,9 @@ MStatus ImportImageCmd::parseBoundingBoxData(const std::string& filepath) {
             bbx.angleFromY_LC_opp = RAD2DEG(angleFromY_LC(bbx.direction_LC_opp));
 
             m_bbx_parse.push_back(bbx);
-
-            // Process each bounding box
-            //MGlobal::displayInfo(MString("Processed bbox for class: ") + class_name.c_str());
         }
-    }
-    inFile.close();
+    };
+    in.close();
 
     // Test
 #if Debug_parseBoundingBoxData
@@ -1547,7 +1535,6 @@ MStatus ImportImageCmd::parseBoundingBoxData(const std::string& filepath) {
         MGlobal::displayInfo(MString("BBX ") + std::to_string(i + 1).c_str() + ": Center (" + std::to_string(bbx.center_position.X()).c_str() + ", " + std::to_string(bbx.center_position.Y()).c_str() + "), Width: " + std::to_string(bbx.width).c_str() + ", Height: " + std::to_string(bbx.height).c_str() + ", Angle: " + std::to_string(bbx.angleFromY).c_str());
     }
 #endif
-    return MS::kSuccess;
 }
 
 //build the graph structure

@@ -42,7 +42,7 @@ public:
     static void* creator();
     static MSyntax newSyntax();
 
-    MStatus parseBoundingBoxData(const std::string& filepath);
+    void parseBoundingBoxData(const std::string& filepath);
     void buildGraph();
     void removeCycles();
     void extractMinimalSpanningTree();
