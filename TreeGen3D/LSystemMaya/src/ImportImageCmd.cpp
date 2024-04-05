@@ -1844,16 +1844,17 @@ void ImportImageCmd::buildNaryTree() {
     bool output_strahler_number = true;
 
     //write expansion grammer
-    std::cout << "Expansion grammar (input string) with parameters: " << std::endl;
+    MGlobal::displayInfo("Expansion grammar (input string) with parameters: ");
     string expansion_grammer_withParas;
     //expansion_grammer_withParas = Nary_write_grammar(root_node, true);
     expansion_grammer_withParas = Nary_write_grammar_forPaper(root_node, true);
-    std::cout << expansion_grammer_withParas << std::endl;
+    MString expansionGrammarWithParams(expansion_grammer_withParas.c_str());
+    MGlobal::displayInfo(expansionGrammarWithParams);
 
-    std::cout << "Expansion grammar (input string) without parameters: " << std::endl;
+    MGlobal::displayInfo("Expansion grammar (input string) without parameters: ");
     string expansion_grammer = Nary_write_grammar(root_node, false);
-    std::cout << expansion_grammer << std::endl;
-    std::cout << std::endl;
+    MString expansionGrammar(expansion_grammer.c_str());
+    MGlobal::displayInfo(expansionGrammar);
 
     //get the scale and branching angle parameters
     m_tree_node_size_ = 0;
@@ -1876,13 +1877,16 @@ void ImportImageCmd::buildNaryTree() {
         // write the last rule
         ruleSuccessor rule = Nary_write_rules(root_node, true);
         m_rules[alphabet[1]].push_back(rule);
-        std::cout << alphabet[1] << " -> " << rule.successor << std::endl;
+        MString lastRuleInfo(alphabet[1].c_str());
+        lastRuleInfo += " -> ";
+        lastRuleInfo += rule.successor.c_str();
+        MGlobal::displayInfo(lastRuleInfo);
     }
 
     std::cout << std::endl;
 
     //print grammer
-    std::cout << "The compact conformal grammar: " << std::endl;
+    MGlobal::displayInfo("The compact conformal grammar: ");
     newAssociativeArray::const_iterator iter;
     int compact_grammar_len = 0;
     for (iter = m_rules.begin(); iter != m_rules.end(); ++iter)
@@ -1891,7 +1895,14 @@ void ImportImageCmd::buildNaryTree() {
         vector<ruleSuccessor> sucs = iter->second;
         for (int i = 0; i < sucs.size(); i++) {
             string right = sucs[i].successor;
-            std::cout << left << " = " << right << std::endl;
+            MString ruleInfo(left.c_str());
+            ruleInfo += " = ";
+            ruleInfo += right.c_str();
+
+            // Print using MGlobal
+            MGlobal::displayInfo(ruleInfo);
+
+            // Calculate the length
             compact_grammar_len += left.length();
             compact_grammar_len += right.length();
         }
@@ -1901,14 +1912,10 @@ void ImportImageCmd::buildNaryTree() {
     //merge similar rules
     grammar_induction();
 
-    //write the last rule about the paramter
     std::ostringstream streamObj3;
-    streamObj3 << std::fixed; // Set Fixed -Point Notation
-    streamObj3 << std::setprecision(2); // Set precision to 2 digits
-    streamObj3 << scalar_para; //Add double to stream
-    //string succ = "<*(" + streamObj3.str() + ")F>";
-    string succ = "F(*" + streamObj3.str() + ")";
-    std::cout << "F->" << succ << std::endl;
-
-    std::cout << std::endl;
+    streamObj3 << std::fixed;
+    streamObj3 << std::setprecision(2);
+    streamObj3 << scalar_para;
+    MString succ_MStr = "F(*" + MString(streamObj3.str().c_str()) + ")";
+    MGlobal::displayInfo(MString("F->") + succ_MStr);
 }
