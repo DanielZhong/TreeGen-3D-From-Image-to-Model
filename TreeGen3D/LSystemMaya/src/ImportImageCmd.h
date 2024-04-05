@@ -22,6 +22,11 @@
 #include <boost/pending/indirect_cmp.hpp>
 #include <boost/range/irange.hpp>
 
+// Qt
+#include <QGLWidget>
+#include <QPaintEvent>
+#include <QtPrintSupport/QPrinter>
+#include <QtSvg>
 
 typedef boost::property<boost::edge_weight_t, double> EdgeWeightProperty;
 typedef boost::adjacency_list<boost::listS, boost::vecS, boost::undirectedS, boost::no_property, EdgeWeightProperty> UndirectedGraph;
@@ -42,9 +47,8 @@ public:
     void removeCycles();
     void extractMinimalSpanningTree();
     void buildNaryTree();
-    
 private:
-    
+	
 };
 
 #endif // IMPORTIMAGECMD_H
