@@ -3,13 +3,12 @@
 #include <stack>
 #include "R2/R2.h"
 #include "R3/R3.h"
-#include <cstdlib> // For std::rand and std::srand
-#include <cmath> 
+#include <qmath.h>
 #include <vector>
 //#include "R3Mesh.h"
 using namespace std;
 
-struct t_line{
+struct t_line {
 	R2Vector p_start;
 	R2Vector p_end;
 	int group_id;
@@ -46,8 +45,8 @@ struct t_line{
 	}
 };
 
-inline double random_number(double value, int thres){
-	double rand_val = (rand() % (thres*2))-thres;
+inline double random_number(double value, int thres) {
+	double rand_val = (rand() % (thres * 2)) - thres;
 	double new_val = rand_val + value;
 	return new_val;
 }
@@ -55,7 +54,7 @@ inline double random_number(double value, int thres){
 inline int randInt(int low, int high)
 {
 	// Random number between low and high
-	return low + (std::rand() % (high - low + 1));
+	return qrand() % ((high + 1) - low) + low;
 }
 
 
@@ -121,7 +120,7 @@ public:
 	void add_group_id();
 	int number_groups() { return group_id; }
 	//void drawLeaf(float param);
-	vector<t_line> resultedTree(){ return tree2d; }
+	vector<t_line> resultedTree() { return tree2d; }
 	void set_random_rule(bool random) { use_random_rule = random; }
 
 	void add_iter_num(int offset);

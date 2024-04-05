@@ -169,6 +169,84 @@ struct pairwise_bbx {
     }
 };
 
+//bool check_bbox_intersect(Bounding_box_parse b1, Bounding_box_parse b2) {
+//    bool is_intersect = false;
+//
+//    // first, do a very fast check to remove most of the cases
+//    double distance = (b1.center_position_LC - b2.center_position_LC).Length();
+//    if (distance > 2.3 * b1.height && distance > 2.3 * b2.height) {
+//        return false;
+//    }
+//
+//    //second, hadnle the tangency case
+//    t_line b1_lines[4] = { t_line(b1.l_t_corner_LC, b1.r_t_corner_LC), t_line{b1.r_t_corner_LC, b1.r_b_corner_LC},
+//                           t_line(b1.r_b_corner_LC, b1.l_b_corner_LC), t_line(b1.l_b_corner_LC, b1.l_t_corner_LC) };
+//    t_line b2_lines[4] = { t_line(b2.l_t_corner_LC, b2.r_t_corner_LC), t_line{b2.r_t_corner_LC, b2.r_b_corner_LC },
+//                           t_line(b2.r_b_corner_LC, b2.l_b_corner_LC), t_line(b2.l_b_corner_LC, b2.l_t_corner_LC) };
+//    for (int i = 0; i < 4; i++) {
+//        t_line e1 = b1_lines[i];
+//        for (int j = 0; j < 4; j++) {
+//            t_line e2 = b2_lines[j];
+//            if (((e1.p_start - e2.p_start).Length() < 0.15 * b1.width && (e1.p_end - e2.p_end).Length() < 0.15 * b1.width) ||
+//                ((e1.p_start - e2.p_end).Length() < 0.15 * b1.width && (e1.p_end - e2.p_start).Length() < 0.15 * b1.width)) {
+//                return true;
+//            }
+//            R2Vector mid1 = (e1.p_start + e1.p_end) * 0.5;
+//            R2Vector mid2 = (e2.p_start + e2.p_end) * 0.5;
+//            if ((mid1 - mid2).Length() < 0.15 * b1.width) {
+//                return true;
+//            }
+//        }
+//    }
+//
+//    // Convert Bounding_box_parse corners to MPoint vectors for polygon representation
+//    std::vector<MPoint> polygonA = {
+//        MPoint(b1.l_t_corner_LC.X(), b1.l_t_corner_LC.Y(), 0.0),
+//        MPoint(b1.r_t_corner_LC.X(), b1.r_t_corner_LC.Y(), 0.0),
+//        MPoint(b1.r_b_corner_LC.X(), b1.r_b_corner_LC.Y(), 0.0),
+//        MPoint(b1.l_b_corner_LC.X(), b1.l_b_corner_LC.Y(), 0.0)
+//    };
+//
+//    std::vector<MPoint> polygonB = {
+//        MPoint(b2.l_t_corner_LC.X(), b2.l_t_corner_LC.Y(), 0.0),
+//        MPoint(b2.r_t_corner_LC.X(), b2.r_t_corner_LC.Y(), 0.0),
+//        MPoint(b2.r_b_corner_LC.X(), b2.r_b_corner_LC.Y(), 0.0),
+//        MPoint(b2.l_b_corner_LC.X(), b2.l_b_corner_LC.Y(), 0.0)
+//    };
+//
+//    // Separating Axis Theorem (SAT) for polygon intersection
+//    for (int polyi = 0; polyi < 2; ++polyi) {
+//        const auto& polygon = polyi == 0 ? polygonA : polygonB;
+//
+//        for (size_t i1 = 0; i1 < polygon.size(); ++i1) {
+//            size_t i2 = (i1 + 1) % polygon.size();
+//
+//            MVector normal(polygon[i2].y - polygon[i1].y, polygon[i1].x - polygon[i2].x, 0.0);
+//
+//            double minA = std::numeric_limits<double>::max();
+//            double maxA = -std::numeric_limits<double>::max();
+//            for (const auto& point : polygonA) {
+//                double projected = (point.x * normal.x + point.y * normal.y);
+//                minA = std::min(minA, projected);
+//                maxA = std::max(maxA, projected);
+//            }
+//
+//            double minB = std::numeric_limits<double>::max();
+//            double maxB = -std::numeric_limits<double>::max();
+//            for (const auto& point : polygonB) {
+//                double projected = (point.x * normal.x + point.y * normal.y);
+//                minB = std::min(minB, projected);
+//                maxB = std::max(maxB, projected);
+//            }
+//
+//            if (maxA < minB || maxB < minA)
+//                return false; // No overlap found on this axis
+//        }
+//    }
+//
+//    return true; // Overlap found on all axes, polygons intersect
+//}
+
 bool check_bbox_intersect(Bounding_box_parse b1, Bounding_box_parse b2) {
     bool is_intersect = false;
 
@@ -199,52 +277,50 @@ bool check_bbox_intersect(Bounding_box_parse b1, Bounding_box_parse b2) {
         }
     }
 
-    // Convert Bounding_box_parse corners to MPoint vectors for polygon representation
-    std::vector<MPoint> polygonA = {
-        MPoint(b1.l_t_corner_LC.X(), b1.l_t_corner_LC.Y(), 0.0),
-        MPoint(b1.r_t_corner_LC.X(), b1.r_t_corner_LC.Y(), 0.0),
-        MPoint(b1.r_b_corner_LC.X(), b1.r_b_corner_LC.Y(), 0.0),
-        MPoint(b1.l_b_corner_LC.X(), b1.l_b_corner_LC.Y(), 0.0)
-    };
+    // third, do the exact test
+    QPolygonF a, b;
+    a << QPointF(b1.l_t_corner_LC.X(), b1.l_t_corner_LC.Y()) << QPointF(b1.r_t_corner_LC.X(), b1.r_t_corner_LC.Y())
+        << QPointF(b1.r_b_corner_LC.X(), b1.r_b_corner_LC.Y()) << QPointF(b1.l_b_corner_LC.X(), b1.l_b_corner_LC.Y());
+    b << QPointF(b2.l_t_corner_LC.X(), b2.l_t_corner_LC.Y()) << QPointF(b2.r_t_corner_LC.X(), b2.r_t_corner_LC.Y())
+        << QPointF(b2.r_b_corner_LC.X(), b2.r_b_corner_LC.Y()) << QPointF(b2.l_b_corner_LC.X(), b2.l_b_corner_LC.Y());
 
-    std::vector<MPoint> polygonB = {
-        MPoint(b2.l_t_corner_LC.X(), b2.l_t_corner_LC.Y(), 0.0),
-        MPoint(b2.r_t_corner_LC.X(), b2.r_t_corner_LC.Y(), 0.0),
-        MPoint(b2.r_b_corner_LC.X(), b2.r_b_corner_LC.Y(), 0.0),
-        MPoint(b2.l_b_corner_LC.X(), b2.l_b_corner_LC.Y(), 0.0)
-    };
+    for (int polyi = 0; polyi < 2; ++polyi)
+    {
+        const QPolygonF& polygon = polyi == 0 ? a : b;
 
-    // Separating Axis Theorem (SAT) for polygon intersection
-    for (int polyi = 0; polyi < 2; ++polyi) {
-        const auto& polygon = polyi == 0 ? polygonA : polygonB;
+        for (int i1 = 0; i1 < polygon.size(); ++i1)
+        {
+            const int i2 = (i1 + 1) % polygon.size();
 
-        for (size_t i1 = 0; i1 < polygon.size(); ++i1) {
-            size_t i2 = (i1 + 1) % polygon.size();
-
-            MVector normal(polygon[i2].y - polygon[i1].y, polygon[i1].x - polygon[i2].x, 0.0);
+            const double normalx = polygon[i2].y() - polygon[i1].y();
+            const double normaly = polygon[i1].x() - polygon[i2].x();
 
             double minA = std::numeric_limits<double>::max();
-            double maxA = -std::numeric_limits<double>::max();
-            for (const auto& point : polygonA) {
-                double projected = (point.x * normal.x + point.y * normal.y);
-                minA = std::min(minA, projected);
-                maxA = std::max(maxA, projected);
+            double maxA = std::numeric_limits<double>::min();
+            for (int ai = 0; ai < a.size(); ++ai)
+            {
+                const double projected = normalx * a[ai].x() +
+                    normaly * a[ai].y();
+                if (projected < minA) minA = projected;
+                if (projected > maxA) maxA = projected;
             }
 
             double minB = std::numeric_limits<double>::max();
-            double maxB = -std::numeric_limits<double>::max();
-            for (const auto& point : polygonB) {
-                double projected = (point.x * normal.x + point.y * normal.y);
-                minB = std::min(minB, projected);
-                maxB = std::max(maxB, projected);
+            double maxB = std::numeric_limits<double>::min();
+            for (int bi = 0; bi < b.size(); ++bi)
+            {
+                const double projected = normalx * b[bi].x() +
+                    normaly * b[bi].y();
+                if (projected < minB) minB = projected;
+                if (projected > maxB) maxB = projected;
             }
 
             if (maxA < minB || maxB < minA)
-                return false; // No overlap found on this axis
+                return false;
         }
     }
 
-    return true; // Overlap found on all axes, polygons intersect
+    return true;
 }
 
 double compute_relative_distance(Bounding_box_parse b1, Bounding_box_parse b2) {
@@ -1484,7 +1560,9 @@ void ImportImageCmd::buildGraph() {
     double min_y = 100000;
     //build tree nodes
     std::vector<pairwise_bbx> adjenct_bbx;
-    std::cout << "number of BBX: " << m_bbx_parse.size() << std::endl;
+    MString infoMsg = "number of BBX: " + MString() + m_bbx_parse.size();
+    MGlobal::displayInfo(infoMsg);
+
     for (int i = 0; i < m_bbx_parse.size(); i++) {
         Bounding_box_parse cur_bbx = m_bbx_parse[i];
 
@@ -1513,10 +1591,14 @@ void ImportImageCmd::buildGraph() {
                 if (std::find(adjenct_bbx.begin(), adjenct_bbx.end(), pb) == adjenct_bbx.end()) {
                     adjenct_bbx.push_back(pb);
                 }
-                //std::cout << "True: " << intersect << std::endl;
+                MString logMessage = "True: ";
+                logMessage += intersect ? "0" : "1"; // Adding the intersection result as a string
+                MGlobal::displayInfo(logMessage);
             }
             else {
-                //std::cout << "False: " << intersect << std::endl;
+                MString logMessage = "False: ";
+                logMessage += intersect ? "0" : "1"; // Adding the intersection result as a string
+                MGlobal::displayInfo(logMessage);
             }
 
         }
