@@ -1768,6 +1768,14 @@ void ImportImageCmd::extractMinimalSpanningTree() {
     m_graph = new_graph;
 }
 
+void appendTextToScrollFieldFromCpp(const std::string& text) {
+    MString mText(text.c_str());
+
+    MString cmd = "appendTextToGrammarScrollField(\"" + mText + "\");";
+
+    MGlobal::executeCommand(cmd);
+}
+
 void ImportImageCmd::buildNaryTree() {
     std::vector<Nary_TreeNode*> nodes_list;
     std::vector<bool> visited;
@@ -1856,6 +1864,10 @@ void ImportImageCmd::buildNaryTree() {
     MString expansionGrammar(expansion_grammer.c_str());
     MGlobal::displayInfo(expansionGrammar);
 
+    std::string cmd = "scrollField -e -text \"" + expansion_grammer + "\" $grammarScrollField;";
+    // Ö´ÐÐ MEL ÃüÁî
+    MGlobal::executeCommand(cmd.c_str());
+
     //get the scale and branching angle parameters
     m_tree_node_size_ = 0;
     m_average_branch_angle_ = 0.0;
@@ -1877,13 +1889,25 @@ void ImportImageCmd::buildNaryTree() {
         // write the last rule
         ruleSuccessor rule = Nary_write_rules(root_node, true);
         m_rules[alphabet[1]].push_back(rule);
+
         MString lastRuleInfo(alphabet[1].c_str());
+        string clastRuleInfo = alphabet[1];
+
         lastRuleInfo += " -> ";
-        lastRuleInfo += rule.successor.c_str();
+        clastRuleInfo += " -> ";
+
+        string suss = rule.successor;
+        clastRuleInfo += suss;
+        lastRuleInfo += suss.c_str();
+        
         MGlobal::displayInfo(lastRuleInfo);
+
+        appendTextToScrollFieldFromCpp(lastRuleInfo.asChar());
     }
 
     std::cout << std::endl;
+
+    
 
     //print grammer
     MGlobal::displayInfo("The compact conformal grammar: ");
