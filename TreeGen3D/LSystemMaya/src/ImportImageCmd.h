@@ -47,6 +47,8 @@ public:
     void removeCycles();
     void extractMinimalSpanningTree();
     void buildNaryTree();
+
+    MString SpawnedGrammar;
 private:
 	
 };

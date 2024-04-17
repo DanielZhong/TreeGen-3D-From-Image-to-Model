@@ -50,7 +50,7 @@ typedef unordered_map<string, vector<ruleSuccessor> > newAssociativeArray;
 
 // ---------------------------------------------------------------------------------------------------------------------------------------------------
 // Helper Variable
-// TODO:: ²»ÖªµÀÎªÊ²Ã´²»ÈÃ´æµ½privateÀïÃæ£¬µ÷È¡µÄÊ±ºòÕÒ²»µ½£¬Ö»ÄÜ·ÅÕâÀïÁË¡£¡£¡£
+// TODO:: ï¿½ï¿½Öªï¿½ï¿½ÎªÊ²Ã´ï¿½ï¿½ï¿½Ã´æµ½privateï¿½ï¿½ï¿½æ£¬ï¿½ï¿½È¡ï¿½ï¿½Ê±ï¿½ï¿½ï¿½Ò²ï¿½ï¿½ï¿½ï¿½ï¿½Ö»ï¿½Ü·ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ë¡ï¿½ï¿½ï¿½ï¿½ï¿½
 std::vector<Bounding_box_parse> m_bbx_parse;
 Nary_TreeNode* rootNode = NULL; // Initialize pointers to NULL for safety
 std::string m_save_image_name;
@@ -1448,7 +1448,7 @@ MStatus ImportImageCmd::doIt(const MArgList& args) {
 
 
     parseBoundingBoxData(filepath.asChar());
-    buildGraph(); // TODO: print³öÀ´µÄdata²»¶Ô£¬ÓÐbug
+    buildGraph(); // TODO: printï¿½ï¿½ï¿½ï¿½ï¿½ï¿½dataï¿½ï¿½ï¿½Ô£ï¿½ï¿½ï¿½bug
 
     removeCycles();
     extractMinimalSpanningTree();
@@ -1865,7 +1865,7 @@ void ImportImageCmd::buildNaryTree() {
     MGlobal::displayInfo(expansionGrammar);
 
     std::string cmd = "scrollField -e -text \"" + expansion_grammer + "\" $grammarScrollField;";
-    // Ö´ÐÐ MEL ÃüÁî
+    // Ö´ï¿½ï¿½ MEL ï¿½ï¿½ï¿½ï¿½
     MGlobal::executeCommand(cmd.c_str());
 
     //get the scale and branching angle parameters
@@ -1878,7 +1878,7 @@ void ImportImageCmd::buildNaryTree() {
 
     m_rules.clear();
 
-    if (m_optAlgorithm_ == "Our") {
+
         //inference using our method
         m_alphabet_pointer = 2;
         unordered_map<string, Nary_repetition_node> m;
@@ -1903,11 +1903,19 @@ void ImportImageCmd::buildNaryTree() {
         MGlobal::displayInfo(lastRuleInfo);
 
         appendTextToScrollFieldFromCpp(lastRuleInfo.asChar());
-    }
-
-    std::cout << std::endl;
-
     
+
+
+        SpawnedGrammar = "\"" + expansionGrammar + "\\nA -> " + rule.successor.c_str() + "\"";
+
+    MGlobal::executeCommand("LSystemCmd -ss 1 -da 45 -ni 1 -g " + SpawnedGrammar);
+
+    MString command = "global string $grammarScrollField = `";
+    command += SpawnedGrammar;
+    command += "`;";
+    MGlobal::executeCommand(command);
+
+    /*MGlobal::displayInfo(SpawnedGrammar + "!!!!!");*/
 
     //print grammer
     MGlobal::displayInfo("The compact conformal grammar: ");
