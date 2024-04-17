@@ -855,3 +855,5 @@ TreeGen3D/CMakeLists.txt
 TreeGen3D/LSystem/LSystem.vcxproj
 TreeGen3D/LSystemMaya/LSystemMaya.vcxproj
 TreeGen3D/LSystem/LSystem.vcxproj
+TreeGen3D/ALL_BUILD.vcxproj.filters
+TreeGen3D/LSystemMaya/ALL_BUILD.vcxproj
