@@ -1,10 +1,14 @@
 #include "LSystemCmd.h"
 #include "LSystem.h"
+#include <maya/MGlobal.h>
+#include <maya/MFnNurbsCurve.h>
+#include <maya/MPointArray.h>
+#include <maya/MDagModifier.h>
+#include <maya/MFnCircleSweepManip.h> 
 #include <maya/MSyntax.h>
 #include <maya/MArgDatabase.h>
-#include <maya/MGlobal.h>
 #include <list>
-#include <sstream>
+#include "ImportImageCMD.h"
 
 LSystemCmd::LSystemCmd() : MPxCommand()
 {
@@ -26,6 +30,7 @@ MSyntax LSystemCmd::newSyntax()
 
 MStatus LSystemCmd::doIt( const MArgList& args )
 {
+	MStatus status;
 	double stepSize = 0.0;
 	double defaultAngle = 0.0;
 	int numIterations = 0;
@@ -44,12 +49,15 @@ MStatus LSystemCmd::doIt( const MArgList& args )
 	if (argData.isFlagSet("-ni"))
 		argData.getFlagArgument("-ni", 0, numIterations);
 
+	ImportImageCmd imageCmd;
 	LSystem system;
 	std::vector<LSystem::Branch> branches_vec;
 
 	system.setDefaultAngle(defaultAngle);
-	system.setDefaultStep(stepSize);
+	system.setDefaultStep(stepSize); 
 	system.loadProgramFromString(grammar.asChar());
+	// system.loadProgramFromString(imageCmd.SpawnedGrammar.asChar());
+	// MGlobal::displayInfo(imageCmd.SpawnedGrammar);
 
 	// interations for L-System
 	for (int i = 0; i < numIterations; i++)
@@ -61,19 +69,32 @@ MStatus LSystemCmd::doIt( const MArgList& args )
 	std::stringstream sstream;
 
 	// Draw the branches from the final iteration
-	for (const auto& branch : branches_vec) {
-		vec3 start = branch.first;
-		vec3 end = branch.second;
+	for (auto& branch : branches_vec) {
+        // custom shape: curve
+        MPoint startPoint(branch.first[0], branch.first[2], branch.first[1]);
+        MPoint endPoint(branch.second[0], branch.second[2], branch.second[1]);
 
-		// Construct the curve creation command
-		sstream << "curve -d 1 -p " << start[0] << " " << start[2] << " " << start[1]
-			<< " -p " << end[0] << " " << end[2] << " " << end[1] << " -k 0 -k 1;";
+        MPointArray curvePoints;
+        curvePoints.append(startPoint);
+        curvePoints.append(endPoint);
 
-		// Construct the extrusion commands
-		sstream << "circle -r 0.2 -name nurbsCircle1; "
-			<< "select -r nurbsCircle1 curve1; "
-			<< "extrude -ch true -rn false -po 1 -et 2 -ucp 1 -fpt 1 -upn 1 -rotation 0 -scale 1 -rsp 1 nurbsCircle1 curve1;";
-	}
+        MDoubleArray knotSequences;
+        knotSequences.append(0.0);
+        knotSequences.append(1.0);
+
+        MDagModifier dagModifier;
+        MObject curveTransformObj = dagModifier.createNode("nurbsCurve");
+        dagModifier.doIt();
+
+        MFnNurbsCurve curveFn;
+        curveFn.setObject(curveTransformObj);
+        curveFn.create(curvePoints, knotSequences, 1, MFnNurbsCurve::kOpen, false, false, MObject::kNullObj, &status);
+
+        if (!status) {
+            status.perror("Failed to create curve for branch");
+            return status;
+        }
+    }
 
 	// Execute the MEL commands
 	MGlobal::executeCommand(sstream.str().c_str());

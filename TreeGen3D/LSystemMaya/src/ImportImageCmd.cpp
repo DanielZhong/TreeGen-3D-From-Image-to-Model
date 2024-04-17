@@ -1866,7 +1866,7 @@ void ImportImageCmd::buildNaryTree() {
 
     m_rules.clear();
 
-    if (m_optAlgorithm_ == "Our") {
+
         //inference using our method
         m_alphabet_pointer = 2;
         unordered_map<string, Nary_repetition_node> m;
@@ -1881,10 +1881,18 @@ void ImportImageCmd::buildNaryTree() {
         lastRuleInfo += " -> ";
         lastRuleInfo += rule.successor.c_str();
         MGlobal::displayInfo(lastRuleInfo);
-    }
 
-    std::cout << std::endl;
 
+        SpawnedGrammar = "\"" + expansionGrammar + "\\nA -> " + rule.successor.c_str() + "\"";
+
+    MGlobal::executeCommand("LSystemCmd -ss 1 -da 45 -ni 1 -g " + SpawnedGrammar);
+
+    MString command = "global string $grammarScrollField = `";
+    command += SpawnedGrammar;
+    command += "`;";
+    MGlobal::executeCommand(command);
+
+    /*MGlobal::displayInfo(SpawnedGrammar + "!!!!!");*/
     //print grammer
     MGlobal::displayInfo("The compact conformal grammar: ");
     newAssociativeArray::const_iterator iter;
