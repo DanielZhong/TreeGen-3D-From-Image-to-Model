@@ -1864,10 +1864,6 @@ void ImportImageCmd::buildNaryTree() {
     MString expansionGrammar(expansion_grammer.c_str());
     MGlobal::displayInfo(expansionGrammar);
 
-    std::string cmd = "scrollField -e -text \"" + expansion_grammer + "\" $grammarScrollField;";
-    // ִ�� MEL ����
-    MGlobal::executeCommand(cmd.c_str());
-
     //get the scale and branching angle parameters
     m_tree_node_size_ = 0;
     m_average_branch_angle_ = 0.0;
@@ -1902,18 +1898,24 @@ void ImportImageCmd::buildNaryTree() {
         
         MGlobal::displayInfo(lastRuleInfo);
 
-        appendTextToScrollFieldFromCpp(lastRuleInfo.asChar());
-    
+        MString mRuleSuccessor(rule.successor.c_str()); // Convert to MString
+        MString header("\"");
+        MString newline("\\nA -> ");
 
-
-        SpawnedGrammar = "\"" + expansionGrammar + "\\nA -> " + rule.successor.c_str() + "\"";
-
+        // Proper concatenation using MString
+        MString SpawnedGrammar = header + mRuleSuccessor + newline + expansionGrammar + "\"";
+        MGlobal::displayInfo(SpawnedGrammar + "?????????????????????");
     MGlobal::executeCommand("LSystemCmd -ss 1 -da 45 -ni 1 -g " + SpawnedGrammar);
 
-    MString command = "global string $grammarScrollField = `";
-    command += SpawnedGrammar;
+    /*MString command = "global string $grammarScrollField = `";
+    command += mRuleSuccessor;
     command += "`;";
-    MGlobal::executeCommand(command);
+    MGlobal::executeCommand(command);*/
+    // appendTextToScrollFieldFromCpp("");
+    std::string cmd = "scrollField -e -text \"" + std::string(mRuleSuccessor.asChar()) + "\" $grammarScrollField;";
+    MGlobal::executeCommand(cmd.c_str());
+    appendTextToScrollFieldFromCpp(expansionGrammar.asChar());
+    
 
     /*MGlobal::displayInfo(SpawnedGrammar + "!!!!!");*/
 
