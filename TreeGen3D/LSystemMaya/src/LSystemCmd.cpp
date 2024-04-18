@@ -68,33 +68,45 @@ MStatus LSystemCmd::doIt( const MArgList& args )
 	// Use a single stringstream and string for command construction
 	std::stringstream sstream;
 
+	MDagModifier dagModifier;
+	MObject lSystemGroup = dagModifier.createNode("transform", MObject::kNullObj, &status);
+	if (!status) {
+		status.perror("Failed to create LSystem group transform");
+		return status;
+	}
+	dagModifier.renameNode(lSystemGroup, "LSystem");
+	dagModifier.doIt();
+
 	// Draw the branches from the final iteration
 	for (auto& branch : branches_vec) {
-        // custom shape: curve
-        MPoint startPoint(branch.first[0], branch.first[2], branch.first[1]);
-        MPoint endPoint(branch.second[0], branch.second[2], branch.second[1]);
+		MPoint startPoint(branch.first[0], branch.first[2], branch.first[1]);
+		MPoint endPoint(branch.second[0], branch.second[2], branch.second[1]);
 
-        MPointArray curvePoints;
-        curvePoints.append(startPoint);
-        curvePoints.append(endPoint);
+		MPointArray curvePoints;
+		curvePoints.append(startPoint);
+		curvePoints.append(endPoint);
 
-        MDoubleArray knotSequences;
-        knotSequences.append(0.0);
-        knotSequences.append(1.0);
+		MDoubleArray knotSequences;
+		knotSequences.append(0.0);
+		knotSequences.append(1.0);
 
-        MDagModifier dagModifier;
-        MObject curveTransformObj = dagModifier.createNode("nurbsCurve");
-        dagModifier.doIt();
+		MDagModifier curveDagModifier;
+		MObject curveTransformObj = curveDagModifier.createNode("transform", lSystemGroup, &status);  // Creating a transform node under LSystem
+		if (!status) {
+			status.perror("Failed to create transform for curve");
+			return status;
+		}
+		curveDagModifier.renameNode(curveTransformObj, "curveTransform");
+		curveDagModifier.doIt();
 
-        MFnNurbsCurve curveFn;
-        curveFn.setObject(curveTransformObj);
-        curveFn.create(curvePoints, knotSequences, 1, MFnNurbsCurve::kOpen, false, false, MObject::kNullObj, &status);
+		MFnNurbsCurve curveFn;
+		MObject curveShapeObj = curveFn.create(curvePoints, knotSequences, 1, MFnNurbsCurve::kOpen, false, false, curveTransformObj, &status);  // Parent the curve shape to the transform
+		if (!status) {
+			status.perror("Failed to create curve for branch");
+			return status;
+		}
+	}
 
-        if (!status) {
-            status.perror("Failed to create curve for branch");
-            return status;
-        }
-    }
 
 	// Execute the MEL commands
 	MGlobal::executeCommand(sstream.str().c_str());

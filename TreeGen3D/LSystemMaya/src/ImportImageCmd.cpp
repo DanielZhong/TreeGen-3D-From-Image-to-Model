@@ -1900,10 +1900,10 @@ void ImportImageCmd::buildNaryTree() {
 
         MString mRuleSuccessor(rule.successor.c_str()); // Convert to MString
         MString header("\"");
-        MString newline("\\nA -> ");
+        MString newline("\\nF -> ");
 
         // Proper concatenation using MString
-        MString SpawnedGrammar = header + mRuleSuccessor + newline + expansionGrammar + "\"";
+        MString SpawnedGrammar = header + expansionGrammar + newline + mRuleSuccessor + "\"";
         MGlobal::displayInfo(SpawnedGrammar + "?????????????????????");
     MGlobal::executeCommand("LSystemCmd -ss 1 -da 45 -ni 1 -g " + SpawnedGrammar);
 
@@ -1912,9 +1912,10 @@ void ImportImageCmd::buildNaryTree() {
     command += "`;";
     MGlobal::executeCommand(command);*/
     // appendTextToScrollFieldFromCpp("");
-    std::string cmd = "scrollField -e -text \"" + std::string(mRuleSuccessor.asChar()) + "\" $grammarScrollField;";
+    std::string cmd = "scrollField -e -text \"" + std::string(expansionGrammar.asChar()) + "\" $grammarScrollField;";
     MGlobal::executeCommand(cmd.c_str());
-    appendTextToScrollFieldFromCpp(expansionGrammar.asChar());
+    MString TextToScrollField = "F-> " + mRuleSuccessor;
+    appendTextToScrollFieldFromCpp(TextToScrollField.asChar());
     
 
     /*MGlobal::displayInfo(SpawnedGrammar + "!!!!!");*/
