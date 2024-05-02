@@ -22,8 +22,16 @@ public:
     void setDefaultAngle(float degrees);
     void setDefaultStep(float distance);
 
+    void setDefaultScalar(float scalar);
+    void setDefaultAPB(float anglePerturbation);
+    void setDefaultSSPB(float stepSizePerturbation);
+
     float getDefaultAngle() const;
     float getDefaultStep() const;
+    float getDefaultScalar() const;
+    float getDefaultAPB() const;
+    float getDefaultSSPB() const;
+
     const std::string& getGrammarString() const;
 
     // Iterate grammar
@@ -47,6 +55,9 @@ protected:
     std::string current;
     float mDfltAngle;
     float mDfltStep;
+    float mDfltScalar;
+    float mDfltAPB;
+    float mDfltSSPB;
     std::string mGrammar;
 
     class Turtle

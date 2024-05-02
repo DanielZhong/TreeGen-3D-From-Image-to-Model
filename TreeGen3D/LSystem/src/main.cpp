@@ -9,6 +9,7 @@ int main(int argc, char **argv)
     system.loadProgramFromString("F\nF->F[+F]F[-F]F");
     system.setDefaultAngle(25.7f);
     system.setDefaultStep(1.0f);
+    system.setDefaultScalar(1.0f);
     for (int i = 0; i < 2; i++)
     {
         std::string insn = system.getIteration(i);
