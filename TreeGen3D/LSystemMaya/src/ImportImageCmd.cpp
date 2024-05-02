@@ -1219,14 +1219,6 @@ bool merge_two_rules(std::vector<ruleProductions>& productions, int ri, int rj, 
     return merged;
 }
 
-void appendTextToScrollFieldFromCpp(const std::string& text) {
-    MString mText(text.c_str());
-
-    MString cmd = "appendTextToGrammarScrollField(\"" + mText + "\");";
-
-    MGlobal::executeCommand(cmd);
-}
-
 void grammar_induction() {
     // collect information about the grammar 
     std::vector<ruleProductions> productions;
@@ -1331,10 +1323,6 @@ void grammar_induction() {
 
     //output 
     std::cout << "After grammar generalization..." << std::endl;
-
-    std::string cmd = "scrollField -e -text \"" + std::string(productions[0].precessor) + "\" $grammarScrollField;";
-    MGlobal::executeCommand(cmd.c_str());
-    
     m_final_grammar_length_ = 0;
     for (int k = 0; k < productions.size(); k++) {
 
@@ -1352,17 +1340,13 @@ void grammar_induction() {
             string::size_type idx = productions[k].successor.find(productions[k].precessor);
             if (idx != string::npos) {
                 std::cout << productions[k].precessor << "->" << productions[k].successor << std::endl;
-                string grammar = productions[k].precessor + "->" + productions[k].successor;
-                appendTextToScrollFieldFromCpp(grammar);
                 m_final_grammar_length_ += productions[k].precessor.length();
                 m_final_grammar_length_ += productions[k].successor.length();
             }
             continue;
         }
-        string grammar = productions[k].precessor + "->" + productions[k].successor;
-        appendTextToScrollFieldFromCpp(grammar);
+
         std::cout << productions[k].precessor << "->" << productions[k].successor << std::endl;
-        
         m_final_grammar_length_ += productions[k].precessor.length();
         m_final_grammar_length_ += productions[k].successor.length();
     }
@@ -1784,6 +1768,14 @@ void ImportImageCmd::extractMinimalSpanningTree() {
     m_graph = new_graph;
 }
 
+void appendTextToScrollFieldFromCpp(const std::string& text) {
+    MString mText(text.c_str());
+
+    MString cmd = "appendTextToGrammarScrollField(\"" + mText + "\");";
+
+    MGlobal::executeCommand(cmd);
+}
+
 void ImportImageCmd::buildNaryTree() {
     std::vector<Nary_TreeNode*> nodes_list;
     std::vector<bool> visited;
@@ -1931,6 +1923,9 @@ void ImportImageCmd::buildNaryTree() {
     //print grammer
     MGlobal::displayInfo("The compact conformal grammar: ");
     newAssociativeArray::const_iterator iter;
+    std::string cmd = "scrollField -e -text \"" + std::string(m_rules.begin()->first) + "\" $grammarScrollField;";
+    MGlobal::executeCommand(cmd.c_str());
+
     int compact_grammar_len = 0;
     for (iter = m_rules.begin(); iter != m_rules.end(); ++iter)
     {
@@ -1944,6 +1939,8 @@ void ImportImageCmd::buildNaryTree() {
 
             // Print using MGlobal
             MGlobal::displayInfo(ruleInfo);
+
+            appendTextToScrollFieldFromCpp(ruleInfo.asChar());
 
             // Calculate the length
             compact_grammar_len += left.length();
