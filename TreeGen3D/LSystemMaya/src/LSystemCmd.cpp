@@ -25,6 +25,9 @@ MSyntax LSystemCmd::newSyntax()
 	syntax.addFlag("-da", "-defaultAngle", MSyntax::kDouble);
 	syntax.addFlag("-g", "-grammar", MSyntax::kString);
 	syntax.addFlag("-ni", "-numIterations", MSyntax::kLong);
+	syntax.addFlag("-sc", "-scalar", MSyntax::kDouble);
+	syntax.addFlag("-apb", "-anglePerturbation", MSyntax::kDouble);
+	syntax.addFlag("-spb", "-stepSizePerturbation", MSyntax::kDouble);
 	return syntax;
 }
 
@@ -34,6 +37,9 @@ MStatus LSystemCmd::doIt( const MArgList& args )
 	double stepSize = 0.0;
 	double defaultAngle = 0.0;
 	int numIterations = 0;
+	double scalar = 1.;
+	double anglePerturbation = 0;
+	double stepSizePerturbation = 0;
 	MString grammar = "";
 	MArgDatabase argData(syntax(), args);
 
@@ -49,13 +55,26 @@ MStatus LSystemCmd::doIt( const MArgList& args )
 	if (argData.isFlagSet("-ni"))
 		argData.getFlagArgument("-ni", 0, numIterations);
 
+	if (argData.isFlagSet("-sc"))
+		argData.getFlagArgument("-sc", 0, scalar);
+
+	if (argData.isFlagSet("-apb"))
+		argData.getFlagArgument("-apb", 0, anglePerturbation);
+
+	if (argData.isFlagSet("-spb"))
+		argData.getFlagArgument("-spb", 0, stepSizePerturbation);
+
 	ImportImageCmd imageCmd;
 	LSystem system;
 	std::vector<LSystem::Branch> branches_vec;
 
 	system.setDefaultAngle(defaultAngle);
-	system.setDefaultStep(stepSize); 
+	system.setDefaultStep(stepSize);
+	system.setDefaultScalar(scalar);
+	system.setDefaultAPB(anglePerturbation);
+	system.setDefaultSSPB(stepSizePerturbation);
 	system.loadProgramFromString(grammar.asChar());
+
 	// system.loadProgramFromString(imageCmd.SpawnedGrammar.asChar());
 	// MGlobal::displayInfo(imageCmd.SpawnedGrammar);
 
@@ -106,7 +125,6 @@ MStatus LSystemCmd::doIt( const MArgList& args )
 			return status;
 		}
 	}
-
 
 	// Execute the MEL commands
 	MGlobal::executeCommand(sstream.str().c_str());

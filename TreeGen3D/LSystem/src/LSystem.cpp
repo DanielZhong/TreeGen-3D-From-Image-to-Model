@@ -33,6 +33,33 @@ float LSystem::getDefaultStep() const
     return mDfltStep;
 }
 
+void  LSystem::setDefaultScalar(float scalar)
+{
+    mDfltScalar = scalar;
+}
+
+void  LSystem::setDefaultAPB(float anglePerturbation)
+{
+    mDfltAPB = anglePerturbation;
+}
+
+void  LSystem::setDefaultSSPB(float stepSizePerturbation)
+{
+    mDfltSSPB = stepSizePerturbation;
+}
+
+float  LSystem::getDefaultScalar() const {
+    return mDfltScalar;
+};
+
+float  LSystem::getDefaultAPB() const {
+    return mDfltAPB;
+};
+
+float  LSystem::getDefaultSSPB() const {
+    return mDfltSSPB;
+};
+
 const std::string& LSystem::getGrammarString() const
 {
     return mGrammar;
@@ -205,9 +232,23 @@ void LSystem::process(unsigned int n,
     Turtle turtle;
     std::stack<Turtle> stack;
 
+    float scalar = getDefaultScalar();
+    float angelPerturbation = getDefaultAPB();
+    float stepSizePerturbation = getDefaultSSPB();
+
+    // randNum (0, 1)
+    float randNum = rand() / double(RAND_MAX);
+    // ranNum2 (-1, 1)
+    float ranNum2 = (rand() / double(RAND_MAX)) * 2 - 1;
+
+    // angelPerturbation(-angelPerturbation, angelPerturbation)
+    angelPerturbation = ranNum2 * angelPerturbation;
+
+    // stepSizePerturbation(0, stepSizePerturbation)
+    stepSizePerturbation = randNum * stepSizePerturbation;
     // Init so we're pointing up
     turtle.applyLeftRot(-90);
-
+    
     std::string insn = getIteration(n);
     for (unsigned int i = 0; i < insn.size(); i++)
     {
@@ -215,36 +256,36 @@ void LSystem::process(unsigned int n,
         if (sym == "F")
         {
             vec3 start = turtle.pos;
-            turtle.moveForward(mDfltStep);
+            turtle.moveForward(mDfltStep * scalar);
             branches.push_back(Branch(start,turtle.pos));
         }
         else if (sym == "f")
         {
-            turtle.moveForward(mDfltStep);
+            turtle.moveForward(mDfltStep * scalar + stepSizePerturbation);
         }
         else if (sym == "+")
         {
-            turtle.applyUpRot(mDfltAngle);
+            turtle.applyUpRot(mDfltAngle + angelPerturbation);
         }
         else if (sym == "-")
         {
-            turtle.applyUpRot(-mDfltAngle);
+            turtle.applyUpRot(-mDfltAngle + angelPerturbation);
         }
         else if (sym == "&")
         {
-            turtle.applyLeftRot(mDfltAngle);
+            turtle.applyLeftRot(mDfltAngle + angelPerturbation);
         }
         else if (sym == "^")
         {
-            turtle.applyLeftRot(-mDfltAngle);
+            turtle.applyLeftRot(-mDfltAngle + angelPerturbation);
         }
         else if (sym == "\\")
         {
-            turtle.applyForwardRot(mDfltAngle);
+            turtle.applyForwardRot(mDfltAngle + angelPerturbation);
         }
         else if (sym == "/")
         {
-            turtle.applyForwardRot(-mDfltAngle);
+            turtle.applyForwardRot(-mDfltAngle + angelPerturbation);
         }
         else if (sym == "|")
         {
