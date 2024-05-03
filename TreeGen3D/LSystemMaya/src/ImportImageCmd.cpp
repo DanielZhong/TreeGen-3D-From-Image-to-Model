@@ -1227,7 +1227,8 @@ void appendTextToScrollFieldFromCpp(const std::string& text) {
     MGlobal::executeCommand(cmd);
 }
 
-void grammar_induction() {
+bool grammar_induction() {
+    bool IsSuccesed = false;
     // collect information about the grammar 
     std::vector<ruleProductions> productions;
     newAssociativeArray::const_iterator iter;
@@ -1347,6 +1348,7 @@ void grammar_induction() {
         if (!has_non_terminals) continue; // if the right side only contains terminal 'F', we discard this rule
 
         if (symbols_infor[productions[k].precessor] > 1) {
+            IsSuccesed = true;
             string::size_type idx = productions[k].successor.find(productions[k].precessor);
             if (idx != string::npos) {
                 std::cout << productions[k].precessor << "->" << productions[k].successor << std::endl;
@@ -1364,8 +1366,7 @@ void grammar_induction() {
         m_final_grammar_length_ += productions[k].precessor.length();
         m_final_grammar_length_ += productions[k].successor.length();
     }
-    MGlobal::executeCommand("clearLSystemGroup()");
-    MGlobal::executeCommand("callLSystemCmd()");
+    return IsSuccesed;
 }
 
 // A Dynamic Programming program to find minimum number operations to convert str1 to str2
@@ -1958,7 +1959,27 @@ void ImportImageCmd::buildNaryTree() {
     std::cout << std::endl;
 
     //merge similar rules
-    grammar_induction();
+    if (grammar_induction() == false) {
+        for (iter = m_rules.begin(); iter != m_rules.end(); ++iter)
+        {
+            string left = iter->first;
+            vector<ruleSuccessor> sucs = iter->second;
+            for (int i = 0; i < sucs.size(); i++) {
+                string right = sucs[i].successor;
+                MString ruleInfo(left.c_str());
+                ruleInfo += " = ";
+                ruleInfo += right.c_str();
+
+                // Print using MGlobal
+                MGlobal::displayInfo(ruleInfo);
+
+                appendTextToScrollFieldFromCpp(ruleInfo.asChar());
+            }
+        }
+    }
+
+    MGlobal::executeCommand("clearLSystemGroup()");
+    MGlobal::executeCommand("callLSystemCmd()");
 
     std::ostringstream streamObj3;
     streamObj3 << std::fixed;
