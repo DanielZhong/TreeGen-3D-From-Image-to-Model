@@ -11,16 +11,13 @@
 
 #ifndef _TREE_STRUCT_H_
 #define _TREE_STRUCT_H_
-
-//== INCLUDES =================================================================
-
 #include <string>
 #include <vector>
 #include <stack>
 #include <queue>
 #include "R2/R2.h"
 
-struct Bounding_box_parse{
+struct BoundingBox{
 	R2Vector center_position, l_t_corner, r_t_corner, r_b_corner, l_b_corner, direction, direction_opp; //Coordinates in images
 	R2Vector center_position_LC, l_t_corner_LC, r_t_corner_LC, r_b_corner_LC, l_b_corner_LC, direction_LC, direction_LC_opp; //Coordinates in the L-system
 	double width, height;
@@ -30,13 +27,13 @@ struct Bounding_box_parse{
 	int group_id;
 	int label_id;
 	
-	Bounding_box_parse()
+	BoundingBox()
 	{
 		group_id = -1;
 		angleFromY = 0;
 		label_id = 0;
 	}
-	Bounding_box_parse(int id) : group_id(id)
+	BoundingBox(int id) : group_id(id)
 	{
 		angleFromY = 0;
 		label_id = 0;
@@ -50,13 +47,12 @@ struct TreeNode
 	TreeNode *middle;
 	TreeNode *right;
 	TreeNode *parent;
-	Bounding_box_parse bbx;
+	BoundingBox bbx;
 	std::vector<int> intersect_nodes;
 	int bbx_index;
-	//int child_num;  // the number of its childrens
 	bool main_branch;
-	int type_id, cluster_id, cluster_size, cluster_level; //
-	string turn_indicator; //"0" for main branch, "1" means turn left, "-1" means turn right
+	int type_id, cluster_id, cluster_size, cluster_level;
+	string turn_indicator;
 	string alphabet_symbol;
 	bool old_repetition;
 
@@ -72,7 +68,7 @@ struct TreeNode
 		old_repetition = false;
 	}
 
-	TreeNode(Bounding_box_parse bb) : bbx(bb), left(NULL), right(NULL), parent(NULL) {
+	TreeNode(BoundingBox bb) : bbx(bb), left(NULL), right(NULL), parent(NULL) {
 		bbx_index = -1;
 		main_branch = false;
 		type_id = -1;
@@ -85,7 +81,7 @@ struct TreeNode
 	}
 };
 
-static inline TreeNode *CreateTreeNode(Bounding_box_parse bbx);
+static inline TreeNode *CreateTreeNode(BoundingBox bbx);
 static inline void ConnectTreeNodes(TreeNode *pParent, TreeNode *pLeft, TreeNode *pRight);
 static inline void ConnectTreeNodes(TreeNode *pParent, TreeNode *pLeft, TreeNode *pMiddle, TreeNode *pRight);
 static inline void DestroyTree(TreeNode *pRoot);
@@ -93,7 +89,7 @@ static inline vector<vector<TreeNode *> > levelOrderNodeBottom(TreeNode *root);
 //static inline vector<TreeNode *> getLeafNodes(TreeNode *root);
 
 //Create new node
-static inline TreeNode *CreateTreeNode(Bounding_box_parse bbx)
+static inline TreeNode *CreateTreeNode(BoundingBox bbx)
 {
 	TreeNode *pNode = new TreeNode(bbx);
 	return pNode;
@@ -141,13 +137,11 @@ static inline void DestroyTree(TreeNode *pRoot)
 	{
 		TreeNode *pLeft = pRoot->left;
 		TreeNode *pRight = pRoot->right;
-		//TreeNode *pMiddle = pRoot->middle;
 
 		delete pRoot;
 		pRoot = NULL;
 
 		DestroyTree(pLeft);
-		//DestroyTree(pMiddle);
 		DestroyTree(pRight);
 	}
 }
@@ -204,7 +198,7 @@ struct Nary_TreeNode
 {
 	std::vector<Nary_TreeNode*> children;
 	Nary_TreeNode *parent;
-	Bounding_box_parse bbx;
+	BoundingBox bbx;
 	int bbx_index;
 	bool main_branch;
 	int type_id, cluster_id, cluster_size, cluster_level;
@@ -226,7 +220,7 @@ struct Nary_TreeNode
 		strahler_number = 0;
 	}
 
-	Nary_TreeNode(Bounding_box_parse bb) : bbx(bb), parent(NULL) {
+	Nary_TreeNode(BoundingBox bb) : bbx(bb), parent(NULL) {
 		bbx_index = -1;
 		main_branch = false;
 		type_id = -1;
@@ -240,10 +234,10 @@ struct Nary_TreeNode
 	}
 };
 
-static inline Nary_TreeNode *CreateNaryTreeNode(Bounding_box_parse bbx);
+static inline Nary_TreeNode *CreateNaryTreeNode(BoundingBox bbx);
 static inline void DestroyTree(Nary_TreeNode *pRoot);
 
-static inline Nary_TreeNode *CreateNaryTreeNode(Bounding_box_parse bbx)
+static inline Nary_TreeNode *CreateNaryTreeNode(BoundingBox bbx)
 {
 	Nary_TreeNode *pNode = new Nary_TreeNode(bbx);
 	return pNode;
@@ -266,7 +260,6 @@ static inline void DestroyTree(Nary_TreeNode *pRoot){
 	}
 }
 
-//connnect the parent and children nodes
 static inline void ConnectTreeNodes(Nary_TreeNode *pParent, Nary_TreeNode *pChild)
 {
 	if (pParent != NULL)

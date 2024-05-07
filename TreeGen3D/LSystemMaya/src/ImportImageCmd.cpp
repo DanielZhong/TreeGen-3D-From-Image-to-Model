@@ -1,4 +1,3 @@
-//#include "LSystemCmd.h"
 #include "ImportImageCmd.h"
 #include <maya/MGlobal.h>
 #include <fstream>
@@ -31,7 +30,6 @@ double Nary_get_scalar_para(Nary_TreeNode* root);
 void Nary_generate_conformal_grammar(Nary_TreeNode* root, unordered_map<string, Nary_repetition_node>& m);
 string Nary_find_repetitions(Nary_TreeNode* node, unordered_map<string, Nary_repetition_node>& m);
 string Nary_select_prefer_repetition(unordered_map<string, Nary_repetition_node>& m, double weight, bool& find);
-//ruleSuccessor Nary_write_rules(Nary_TreeNode* root, bool new_tree = false);
 bool Nary_update_cluster_infomation(Nary_TreeNode* node, int cluster_id, string symb);
 void Nary_perform_clustring(Nary_TreeNode* node, bool find = false);
 bool Nary_perform_collaps_leaf(Nary_TreeNode* node, bool find = false);
@@ -49,7 +47,7 @@ struct ruleSuccessor {
 typedef unordered_map<string, vector<ruleSuccessor> > newAssociativeArray;
 
 // ---------------------------------------------------------------------------------------------------------------------------------------------------
-std::vector<Bounding_box_parse> m_bbx_parse;
+std::vector<BoundingBox> m_bbx_parse;
 Nary_TreeNode* rootNode = NULL; // Initialize pointers to NULL for safety
 std::string m_save_image_name;
 double m_min_len;
@@ -86,7 +84,6 @@ std::unordered_map<string, string> m_used_symbols;
 double m_final_grammar_length_;
 
 // Helper Functions
-
 inline int get_class_id(const std::string& name) {
     static const std::map<std::string, int> class_ids = {
         {"b60", 0},
@@ -167,7 +164,7 @@ struct pairwise_bbx {
     }
 };
 
-bool check_bbox_intersect(Bounding_box_parse b1, Bounding_box_parse b2) {
+bool check_bbox_intersect(BoundingBox b1, BoundingBox b2) {
     bool is_intersect = false;
 
     // first, do a very fast check to remove most of the cases
@@ -243,18 +240,15 @@ bool check_bbox_intersect(Bounding_box_parse b1, Bounding_box_parse b2) {
     return true;
 }
 
-double compute_relative_distance(Bounding_box_parse b1, Bounding_box_parse b2) {
+double compute_relative_distance(BoundingBox b1, BoundingBox b2) {
 
     double pair_weight = 100;
     double max_height = (b1.height > b2.height) ? b1.height : b2.height;
-    // first, do a very fast check to remove most of the cases
     double cc_distance = (b1.center_position_LC - b2.center_position_LC).Length();
     if (cc_distance > m_centerDis_thrs * max_height) {
-        //if (cc_distance > (1.0 * (b1.height + b2.height))){
         return pair_weight;
     }
 
-    //second, do another check by using bbx corners to remove some cases
     bool intersect = check_bbox_intersect(b1, b2);
     if (!intersect) {
         t_line b1_lines[4] = { t_line(b1.l_t_corner_LC, b1.r_t_corner_LC), t_line{ b1.r_t_corner_LC, b1.r_b_corner_LC },
@@ -1242,7 +1236,7 @@ void ImportImageCmd::parseBoundingBoxData(const std::string& filename) {
     while (in) {
         in >> class_name >> score >> x_c >> y_c >> w >> h >> angle;
         if (in) {
-            Bounding_box_parse bbx;
+            BoundingBox bbx;
             bbx.center_position = R2Vector(x_c, y_c);
             bbx.label_id = get_class_id(class_name);
             //here we make two strong assumptions about the rotation
@@ -1319,7 +1313,7 @@ void ImportImageCmd::buildGraph() {
     MGlobal::displayInfo(infoMsg);
 
     for (int i = 0; i < m_bbx_parse.size(); i++) {
-        Bounding_box_parse cur_bbx = m_bbx_parse[i];
+        BoundingBox cur_bbx = m_bbx_parse[i];
         for (int j = 0; j < m_bbx_parse.size(); j++) {
             if (i == j) continue;
             bool intersect = check_bbox_intersect(m_bbx_parse[i], m_bbx_parse[j]);
@@ -1521,7 +1515,7 @@ void ImportImageCmd::buildNaryTree() {
     std::vector<int> parents;
     //build tree nodes
     for (int i = 0; i < m_bbx_parse.size(); i++) {
-        Bounding_box_parse cur_bbx = m_bbx_parse[i];
+        BoundingBox cur_bbx = m_bbx_parse[i];
         Nary_TreeNode* cur_node = CreateNaryTreeNode(m_bbx_parse[i]);
         cur_node->bbx_index = i + 1;
         nodes_list.push_back(cur_node);
