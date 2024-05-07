@@ -457,9 +457,6 @@ string Nary_write_grammar_forPaper(Nary_TreeNode* root, bool with_paras) {
         //std::cout << "[+F]";
     }
     else if (root->bbx.angleFromParent < 0) {
-        //std::cout << "[-(" << -root->bbx.angleFromParent << ")F]";
-        //str += "[-(" + std::to_string(root->bbx.angleFromParent) + ")F";
-        //str += "[-F";
         if (with_paras) {
             string prefix1 = "F(" + turn_scaler + ")";
             string prfix = "[-(" + turn_angle + ")" + prefix1;
@@ -554,12 +551,8 @@ string Nary_write_grammar(Nary_TreeNode* root, bool with_paras) {
             str += Nary_write_grammar(root->children[main_branch_idx], with_paras);
         }
         str += "]";
-        //std::cout << "[+F]";
     }
     else if (root->bbx.angleFromParent < 0) {
-        //std::cout << "[-(" << -root->bbx.angleFromParent << ")F]";
-        //str += "[-(" + std::to_string(root->bbx.angleFromParent) + ")F";
-        //str += "[-F";
         if (with_paras) {
             string prefix1 = "<*(" + turn_scaler + ")&(" + strahler_number + ")F>";
             string prfix = "[-(" + turn_angle + ")" + prefix1;
@@ -581,7 +574,6 @@ string Nary_write_grammar(Nary_TreeNode* root, bool with_paras) {
             str += Nary_write_grammar(root->children[main_branch_idx], with_paras);
         }
         str += "]";
-        //std::cout << "[-F]";
     }
     return str;
 }
@@ -617,15 +609,6 @@ double Nary_get_scalar_para(Nary_TreeNode* root) {
     return scalar;
 }
 
-//struct Nary_repetition_node {
-//    int oocur_time;
-//    int last_groups_numer;
-//    int group_node_size;
-//    std::vector<Nary_TreeNode*> parent_node;
-//    //std::unordered_set<TreeNode *> parent_node;
-//    Nary_repetition_node() : oocur_time(0), last_groups_numer(0) {}
-//};
-//
 string Nary_find_repetitions(Nary_TreeNode* node, unordered_map<string, Nary_repetition_node>& m)
 {
     if (!node)
@@ -649,16 +632,7 @@ string Nary_find_repetitions(Nary_TreeNode* node, unordered_map<string, Nary_rep
         str += node->children[main_branch_idx]->turn_indicator;
         str += Nary_find_repetitions(node->children[main_branch_idx], m);
     }
-    //str += to_string(node->data);
     str += ")";
-
-    // Subtree already present (Note that we use 
-    // unordered_map instead of unordered_set 
-    // because we want to print multiple duplicates 
-    // only once, consider example of 4 in above 
-    // subtree, it should be printed only once. 
-    //if (m[str].oocur_time >= 1 && str.length()>3)
-    //	cout << node->bbx_index << " ";
 
     std::set<Nary_TreeNode*>::iterator siter;
     siter = m_selected_repetitions_nary_nodes.find(node);
@@ -667,65 +641,10 @@ string Nary_find_repetitions(Nary_TreeNode* node, unordered_map<string, Nary_rep
         m[str].parent_node.push_back(node);
     }
 
-    /*std::pair<std::unordered_set<TreeNode *>::iterator, bool> ret;
-    ret = m[str].parent_node.insert(node);
-    if (ret.second){
-    m[str].oocur_time++;
-    }*/
 
     return str;
 }
 
-//string Nary_find_repetitions(Nary_TreeNode* node, unordered_map<string, Nary_repetition_node>& m)
-//{
-//    if (!node)
-//        return "";
-//
-//    string str = "(";
-//    //str += node->turn_indicator;
-//    int main_branch_idx = -1;
-//    for (int i = 0; i < node->children.size(); i++) {
-//        if (node->children[i]->main_branch) {
-//            main_branch_idx = i;
-//            continue;
-//        }
-//        if (node->cluster_level == node->children[i]->cluster_level) {
-//            str += node->children[i]->turn_indicator;
-//            str += Nary_find_repetitions(node->children[i], m);
-//        }
-//
-//    }
-//    if (main_branch_idx != -1 && node->cluster_level == node->children[main_branch_idx]->cluster_level) {
-//        str += node->children[main_branch_idx]->turn_indicator;
-//        str += Nary_find_repetitions(node->children[main_branch_idx], m);
-//    }
-//    //str += to_string(node->data);
-//    str += ")";
-//
-//    // Subtree already present (Note that we use 
-//    // unordered_map instead of unordered_set 
-//    // because we want to print multiple duplicates 
-//    // only once, consider example of 4 in above 
-//    // subtree, it should be printed only once. 
-//    //if (m[str].oocur_time >= 1 && str.length()>3)
-//    //	cout << node->bbx_index << " ";
-//
-//    std::set<Nary_TreeNode*>::iterator siter;
-//    siter = m_selected_repetitions_nary_nodes.find(node);
-//    if (siter == m_selected_repetitions_nary_nodes.end()) {
-//        m[str].oocur_time++;
-//        m[str].parent_node.push_back(node);
-//    }
-//
-//    /*std::pair<std::unordered_set<TreeNode *>::iterator, bool> ret;
-//    ret = m[str].parent_node.insert(node);
-//    if (ret.second){
-//    m[str].oocur_time++;
-//    }*/
-//
-//    return str;
-//}
-//
 string Nary_select_prefer_repetition(unordered_map<string, Nary_repetition_node>& m, double weight, bool& find) {
     string select_str = "";
     std::unordered_map<string, Nary_repetition_node>::iterator iter;
@@ -741,7 +660,6 @@ string Nary_select_prefer_repetition(unordered_map<string, Nary_repetition_node>
 
     for (iter = m.begin(); iter != m.end(); iter++)
     {
-        // get the node numbers of this sub-tree
         string str = iter->first;
         int num = 0;
         for (int j = 0; j < str.length(); j++) {
@@ -754,13 +672,8 @@ string Nary_select_prefer_repetition(unordered_map<string, Nary_repetition_node>
 
         std::set<string>::iterator siter;
         siter = m_selected_repetitions.find(str);
-        //ret = m_selected_repetitions.insert(str);
 
-        /*
-        2020.02.08: Jianwei changed the 'group_node_size >= 3' to 'group_node_size >= 2'
-        */
         if ((iter->second.oocur_time > 1 && group_node_size >= 3) || siter != m_selected_repetitions.end()) {
-            //if (iter->second.oocur_time > 1 && group_node_size >= 3){
             if (group_node_size > max_node_size) {
                 max_node_size = group_node_size;
                 select_str = iter->first;
@@ -801,10 +714,8 @@ void Nary_perform_clustring(Nary_TreeNode* node, bool find) {
     int max_iter = 10;
     for (int i = 0; i < max_iter; i++) {
         collaps_happen = Nary_perform_collaps_leaf(node, find);
-        //print_tree(node, 0);
         move_happen = Nary_perform_move_leaf(node, find);
         if (!collaps_happen && !move_happen) break;
-        //if (!collaps_happen) break;
     }
 }
 
@@ -873,7 +784,6 @@ bool Nary_perform_collaps_leaf(Nary_TreeNode* node, bool find) {
         collaps_happen = (collaps_happen || collaps_2);
     }
     if (node->children.size() == 0) {
-        //if (node->cluster_level == 1 && node->type_id == node->parent->type_id && node->cluster_id == node->parent->cluster_id){
         if (!find && node->alphabet_symbol == node->parent->alphabet_symbol && node->cluster_id == node->parent->cluster_id) {
             node->parent->children.erase(std::find(node->parent->children.begin(), node->parent->children.end(), node));
             DestroyTree(node);
@@ -920,7 +830,6 @@ ruleSuccessor Nary_write_rules(Nary_TreeNode* root, bool new_tree) {
         return rule;
 
     if (abs(root->bbx.angleFromParent) < m_mianBranchAngle_thrs) {
-        //str += "F";
         str += root->alphabet_symbol;
         int main_branch_idx = -1;
         for (int i = 0; i < root->children.size(); i++) {
@@ -935,8 +844,6 @@ ruleSuccessor Nary_write_rules(Nary_TreeNode* root, bool new_tree) {
         }
     }
     else if (root->bbx.angleFromParent > 0) {
-        //str += "[+(" + std::to_string(root->bbx.angleFromParent) + ")F";
-        //str += "[+F";
         if (new_tree) {
             str += root->alphabet_symbol;
         }
@@ -960,9 +867,6 @@ ruleSuccessor Nary_write_rules(Nary_TreeNode* root, bool new_tree) {
         //std::cout << "[+F]";
     }
     else if (root->bbx.angleFromParent < 0) {
-        //std::cout << "[-(" << -root->bbx.angleFromParent << ")F]";
-        //str += "[-(" + std::to_string(root->bbx.angleFromParent) + ")F";
-        //str += "[-F";
         if (new_tree) {
             str += root->alphabet_symbol;
         }
@@ -983,7 +887,6 @@ ruleSuccessor Nary_write_rules(Nary_TreeNode* root, bool new_tree) {
         if (!new_tree) {
             str += "]";
         }
-        //std::cout << "[-F]";
     }
     rule.successor = str;
     return rule;
@@ -999,7 +902,6 @@ void Nary_generate_conformal_grammar(Nary_TreeNode* root, unordered_map<string, 
     double weight = 0.5;
     int real_iters = 0;
     for (int k = 0; k < max_iter; k++) {
-        //find all repetitions in current tree/sub-tree
         bool new_repetition = false;
         m.clear();
         Nary_find_repetitions(root, m);
@@ -1009,35 +911,28 @@ void Nary_generate_conformal_grammar(Nary_TreeNode* root, unordered_map<string, 
                 new_repetition = true;
             }
         }
-        //stop if cannot cluster anymore
         bool find_again = false;
         string str = Nary_select_prefer_repetition(m, weight, find_again);
         if (str == "") {
-            //std::cout << "No selected repetition!" << std::endl;
             if (root->parent != NULL && !root->old_repetition) {
                 ruleSuccessor rule = Nary_write_rules(root, true);
                 m_rules[alphabet[m_alphabet_pointer]].push_back(rule);
-                //std::cout << alphabet[m_alphabet_pointer] << " -> " << rule.successor << endl;
-                //m_alphabet_pointer++;
             }
             break;
         }
         m_selected_repetitions.insert(str);
 
-        //update the cluster information according to current repetition
         Nary_repetition_node r_node = m[str];
         int last_groups_numer = r_node.last_groups_numer;
         if (!find_again) {
             m_used_symbols[str] = alphabet[m_alphabet_pointer];
         }
 
-        //int cluster_id = 0;
         for (int i = last_groups_numer; i < r_node.parent_node.size(); i++) {
             r_node.parent_node[i]->old_repetition = find_again;
             m_selected_repetitions_nary_nodes.insert(r_node.parent_node[i]);
-            if (i == 0) {// we only genrate the grammar once for current repetition
+            if (i == 0) {
                 Nary_generate_conformal_grammar(r_node.parent_node[i], m);
-                //if (find_again) m_alphabet_pointer--;
             }
             if (find_again) {
                 bool update = Nary_update_cluster_infomation(r_node.parent_node[i], i, m_used_symbols[str]); //update the node information;
@@ -1051,17 +946,10 @@ void Nary_generate_conformal_grammar(Nary_TreeNode* root, unordered_map<string, 
         if (!find_again) m_alphabet_pointer++;
 
         real_iters++;
-
-        //std::cout << "***********After iteration " << k + 1 << "**************" << std::endl;
-        //Nary_print_tree(root, 0);
     }
-
-    //cout << "Our Greedy Iterations: " << real_iters << endl;
 }
 
 int compute_grammar_length(std::vector<ruleProductions>& productions, std::unordered_map<string, int>& symbols_info) {
-    //compute current grammar length
-    //std::set<string> used_symbols;
     int symbols_length = 0;
     int grammar_length = 0;
     for (int j = 0; j < productions.size(); j++) {
@@ -1084,7 +972,6 @@ bool merge_two_rules(std::vector<ruleProductions>& productions, int ri, int rj, 
     string left1 = productions[ri].precessor;
     string left2 = productions[rj].precessor;
     for (int k = 0; k < productions.size(); k++) {
-        //if (k == ri) continue;
         if (productions[k].precessor == left2) {
             productions[k].precessor = left1;
             symbols_info[left2] -= 1;
@@ -1092,8 +979,6 @@ bool merge_two_rules(std::vector<ruleProductions>& productions, int ri, int rj, 
             merged = true;
         }
         string rhs = productions[k].successor;
-        //replace left2 with left1 in the RHS string
-        //rhs = regex_replace(rhs, regex(left2), left1);
         size_t pos = 0;
         while ((pos = rhs.find(left2, pos)) != std::string::npos) {
             rhs.replace(pos, left2.length(), left1);
@@ -1102,7 +987,6 @@ bool merge_two_rules(std::vector<ruleProductions>& productions, int ri, int rj, 
         productions[k].successor = rhs;
     }
 
-    // we handle the case that the RHS of two rules are identical
     std::vector<ruleProductions> productions_copy;
     std::set<int> deleted_ids;
     for (int k = 0; k < productions.size(); k++) {
@@ -1149,7 +1033,6 @@ void appendTextToScrollFieldFromCpp(const std::string& text) {
 
 bool grammar_induction() {
     bool IsSuccesed = false;
-    // collect information about the grammar 
     std::vector<ruleProductions> productions;
     newAssociativeArray::const_iterator iter;
     std::unordered_map<string, int> symbols_infor;
@@ -1160,23 +1043,12 @@ bool grammar_induction() {
         vector<ruleSuccessor> sucs = iter->second;
         for (int i = 0; i < sucs.size(); i++) {
             string right = sucs[i].successor;
-            //bool has_non_terminals = rule_has_non_terminals(right);
-            /*bool has_non_terminals = false;
-            for (int i = 0; i < right.length(); i++) {
-            if (!(right.at(i) == '(' || right.at(i) == ')' || right.at(i) == '+' || right.at(i) == '-' || right.at(i) == '[' || right.at(i) == ']' || right.at(i) == 'F')) {
-            has_non_terminals = true;
-            break;
-            }
-            }*/
-            //if(has_non_terminals) {
             ruleProductions rule(left, right);
             productions.push_back(rule);
             symbols_infor[left] += 1;
-            //}
         }
     }
 
-    // we merge similar rules in a greedy way
     int max_iter = 10;
     double edit_dis_threshold = 6;
     for (int i = 0; i < max_iter; i++) {
@@ -1184,23 +1056,16 @@ bool grammar_induction() {
         //compute current grammar length
         int grammar_length = compute_grammar_length(productions, symbols_infor);
 
-        //find and merge two rules that can be merged
-        //std::vector<pair_rule> candidate_pairs;
-        //std::vector<int> min_loss_ids;
         double min_loss = 100000;
         std::vector<ruleProductions> productions_new;
         std::vector<ruleProductions> productions_final;
-        //bool update = false;
         for (int j = 0; j < productions.size(); j++)
         {
-            //cout << iter->second[0].successor << endl;
             string left1 = productions[j].precessor;
             string right1 = productions[j].successor;
-            //if (left1 == "S") {
             for (int k = 0; k < productions.size(); k++) {
                 bool update = false;
                 if (j == k) continue;
-                //cout << iter2->second[0].successor << endl;
                 string left2 = productions[k].precessor;
                 string right2 = productions[k].successor;
 
@@ -1237,16 +1102,12 @@ bool grammar_induction() {
                     productions_final.assign(productions_new.begin(), productions_new.end());
                     update = true;
                 }
-                //swap
                 if (update) {
                     productions.assign(productions_final.begin(), productions_final.end());
                     productions_final.clear();
                 }
             }
-            //}
         }
-
-        //cout << "Merge iteration: " << i << endl;
         if (merged == false) break;
     }
 
@@ -1265,7 +1126,7 @@ bool grammar_induction() {
                 break;
             }
         }
-        if (!has_non_terminals) continue; // if the right side only contains terminal 'F', we discard this rule
+        if (!has_non_terminals) continue;
 
         if (symbols_infor[productions[k].precessor] > 1) {
             IsSuccesed = true;
@@ -1289,13 +1150,10 @@ bool grammar_induction() {
     return IsSuccesed;
 }
 
-// A Dynamic Programming program to find minimum number operations to convert str1 to str2
 double edit_distance_DP(string str1, string str2)
 {
     // Create a table to store results of subproblems 
     int m = str1.length(), n = str2.length();
-    //int dp[m + 1][n + 1];
-    //int[][] dp = new int[m + 1][n + 1];
     double** dp;
     dp = new double* [m + 1];
     for (int i = 0; i <= m; i++)
@@ -1303,7 +1161,6 @@ double edit_distance_DP(string str1, string str2)
         dp[i] = new double[n + 1];
     }
 
-    // Fill d[][] in bottom up manner 
     for (int i = 0; i <= m; i++)
     {
         if (i == 9) {
@@ -1311,11 +1168,9 @@ double edit_distance_DP(string str1, string str2)
         }
         for (int j = 0; j <= n; j++)
         {
-            // If first string is empty, only option is to isnert all characters of second string 
             if (i == 0) {
-                dp[i][j] = j;  // Min. operations = j 
-            }
-            // If second string is empty, only option is to remove all characters of second string 
+                dp[i][j] = j;
+            } 
             else if (j == 0) {
                 dp[i][j] = i; // Min. operations = i 
             }
@@ -1325,9 +1180,9 @@ double edit_distance_DP(string str1, string str2)
             }
             // If the last character is different, consider all possibilities and find the minimum 
             else {
-                double insert_op = dp[i][j - 1]; // Insert
+                double insert_op = dp[i][j - 1];
                 double remove_op = dp[i - 1][j];
-                double replace_op = dp[i - 1][j - 1];// Replace
+                double replace_op = dp[i - 1][j - 1];
                 dp[i][j] = 1 + std::min(insert_op, std::min(remove_op, replace_op));
             }
         }
@@ -1385,7 +1240,7 @@ MStatus ImportImageCmd::doIt(const MArgList& args) {
 
 
     parseBoundingBoxData(filepath.asChar());
-    buildGraph(); // TODO: print������data���ԣ���bug
+    buildGraph(); 
 
     removeCycles();
     extractMinimalSpanningTree();
@@ -1489,39 +1344,23 @@ void ImportImageCmd::buildGraph() {
 
     for (int i = 0; i < m_bbx_parse.size(); i++) {
         Bounding_box_parse cur_bbx = m_bbx_parse[i];
-
-        //std::cout << "i: " << i << std::endl;
         for (int j = 0; j < m_bbx_parse.size(); j++) {
             if (i == j) continue;
-            //std::cout << "j: " << j << std::endl;
             bool intersect = check_bbox_intersect(m_bbx_parse[i], m_bbx_parse[j]);
             double pair_weight = compute_relative_distance(m_bbx_parse[i], m_bbx_parse[j]);
 
-            //if (intersect){
-            //	//boost::add_edge(i, j, 0.0, m_graph);
-            //	pairwise_bbx pb(i, j, 0.0);
-            //	if (std::find(adjenct_bbx.begin(), adjenct_bbx.end(), pb) == adjenct_bbx.end()){
-            //		adjenct_bbx.push_back(pb);
-            //	}
-            //	std::cout << "True: " << pair_weight << std::endl;
-            //}
-            //else{
-            //	std::cout << "False: " << pair_weight << std::endl;
-            //}
-
             if (pair_weight < m_weight_thrs) {
-                //boost::add_edge(i, j, 0.0, m_graph);
                 pairwise_bbx pb(i, j, pair_weight);
                 if (std::find(adjenct_bbx.begin(), adjenct_bbx.end(), pb) == adjenct_bbx.end()) {
                     adjenct_bbx.push_back(pb);
                 }
                 MString logMessage = "True: ";
-                logMessage += intersect ? "0" : "1"; // Adding the intersection result as a string
+                logMessage += intersect ? "0" : "1";
                 MGlobal::displayInfo(logMessage);
             }
             else {
                 MString logMessage = "False: ";
-                logMessage += intersect ? "0" : "1"; // Adding the intersection result as a string
+                logMessage += intersect ? "0" : "1";
                 MGlobal::displayInfo(logMessage);
             }
 
@@ -1545,9 +1384,8 @@ void ImportImageCmd::buildGraph() {
 
     MGlobal::displayInfo(MString("Build graph done!"));
 
-    // print and test
 #if Debug_buildGraph
-    auto ei = edges(m_graph); // Assuming this function exists and returns a pair of iterators
+    auto ei = edges(m_graph);
     MGlobal::displayInfo("Number of edges = " + toMString(num_edges(m_graph)));
     MGlobal::displayInfo("Edge list:");
 
@@ -1555,7 +1393,6 @@ void ImportImageCmd::buildGraph() {
         MGlobal::displayInfo(toMString(*it));
     }
 
-    // Adjacency iteration for a vertex, example vertex id '2' is used here
     UndirectedGraph::adjacency_iterator vit, vend;
     std::tie(vit, vend) = boost::adjacent_vertices(2, m_graph);
     MGlobal::displayInfo("Adjacent vertices to vertex 2:");
@@ -1602,14 +1439,11 @@ void ImportImageCmd::removeCycles() {
                     }
 
                     if (min_distance > nodes.size()) {
-                        //if (max_distance < real_dis){
                         min_distance = nodes.size();
-                        //max_distance = real_dis;
                         indx = k;
                     }
                 }
                 if (indx == 0) {
-                    //int left = cycles[i][1], right = cycles[i][2];
                     boost::remove_edge(cycles[i][1], cycles[i][2], m_graph);
                 }
                 else if (indx == 1) {
@@ -1776,7 +1610,6 @@ void ImportImageCmd::buildNaryTree() {
     MGlobal::displayInfo(MString("Build tree done! The initial tree: "));
     Nary_print_tree(root_node, 0);
 #endif
-    // TODO: More codes here
     Nary_compute_strahler_number(root_node);
     bool output_strahler_number = true;
 
@@ -1833,27 +1666,10 @@ void ImportImageCmd::buildNaryTree() {
 
         // Proper concatenation using MString
         MString SpawnedGrammar = header + expansionGrammar + newline + mRuleSuccessor + "\"";
-        MGlobal::displayInfo(SpawnedGrammar + "?????????????????????");
-    // MGlobal::executeCommand("LSystemCmd -ss 1 -da 45 -ni 1 -g " + SpawnedGrammar);
-
-    /*MString command = "global string $grammarScrollField = `";
-    command += mRuleSuccessor;
-    command += "`;";
-    MGlobal::executeCommand(command);*/
-    // appendTextToScrollFieldFromCpp("");
-    //std::string cmd = "scrollField -e -text \"" + std::string(expansionGrammar.asChar()) + "\" $grammarScrollField;";
-    //MGlobal::executeCommand(cmd.c_str());
-    //MString TextToScrollField = "F-> " + mRuleSuccessor;
-    //appendTextToScrollFieldFromCpp(TextToScrollField.asChar());
-    
-
-    /*MGlobal::displayInfo(SpawnedGrammar + "!!!!!");*/
 
     //print grammer
     MGlobal::displayInfo("The compact conformal grammar: ");
     newAssociativeArray::const_iterator iter;
-    //std::string cmd = "scrollField -e -text \"" + std::string(m_rules.begin()->first) + "\" $grammarScrollField;";
-    //MGlobal::executeCommand(cmd.c_str());
 
     int compact_grammar_len = 0;
     for (iter = m_rules.begin(); iter != m_rules.end(); ++iter)
@@ -1868,8 +1684,6 @@ void ImportImageCmd::buildNaryTree() {
 
             // Print using MGlobal
             MGlobal::displayInfo(ruleInfo);
-
-            // appendTextToScrollFieldFromCpp(ruleInfo.asChar());
 
             // Calculate the length
             compact_grammar_len += left.length();
