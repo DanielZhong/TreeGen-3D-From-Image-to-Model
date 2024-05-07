@@ -282,19 +282,8 @@ double compute_relative_distance(Bounding_box_parse b1, Bounding_box_parse b2) {
         }
     }
 
-    ////third, if the angle between two boxes are very large, we remove it
-    //double dot_value = b1.direction_LC.Dot(b2.direction_LC);
-    //double cos_value = dot_value / (b1.direction_LC.Length() * b2.direction_LC.Length());
-    //double angle = RAD2DEG(std::acos(cos_value));
-    //if (angle > 90.0){
-    //	return pair_weight;
-    //}
-
-    // we compute the relative distance 
     R2Vector b2_to_b1 = (b1.center_position_LC - b2.center_position_LC);
-    //b2_to_b1.Normalize();
     R2Vector b1_to_b2 = (b2.center_position_LC - b1.center_position_LC);
-    //b1_to_b2.Normalize();
     R2Vector projection_vec_on_b1 = b2_to_b1;
     R2Vector projection_vec_on_b2 = b1_to_b2;
     projection_vec_on_b1.Project(b1.direction_LC);
@@ -342,12 +331,6 @@ void Nary_compute_strahler_number(Nary_TreeNode* root) {
         count--;
         if (count == 0)
         {
-            /* vector<TreeNode*> tmp;
-            vector<TreeNode *>::iterator it = path.begin();
-            for(; it != path.end(); ++it)
-            {
-            tmp.push_back((*it));
-            }*/
             sv.push(path);
             count = path.size();
         }
@@ -433,7 +416,6 @@ string Nary_write_grammar_forPaper(Nary_TreeNode* root, bool with_paras) {
     }
     else if (root->bbx.angleFromParent > 0) {
         if (with_paras) {
-            //str += "[+(" + std::to_string(root->bbx.angleFromParent) + ")F";
             string prefix1 = "F(" + turn_scaler + ")";
             string prfix = "[+(" + turn_angle + ")" + prefix1;
             str += prfix;
@@ -454,7 +436,6 @@ string Nary_write_grammar_forPaper(Nary_TreeNode* root, bool with_paras) {
             str += Nary_write_grammar_forPaper(root->children[main_branch_idx], with_paras);
         }
         str += "]";
-        //std::cout << "[+F]";
     }
     else if (root->bbx.angleFromParent < 0) {
         if (with_paras) {
@@ -478,7 +459,6 @@ string Nary_write_grammar_forPaper(Nary_TreeNode* root, bool with_paras) {
             str += Nary_write_grammar_forPaper(root->children[main_branch_idx], with_paras);
         }
         str += "]";
-        //std::cout << "[-F]";
     }
     return str;
 }
@@ -508,7 +488,6 @@ string Nary_write_grammar(Nary_TreeNode* root, bool with_paras) {
 
     if (abs(root->bbx.angleFromParent) < m_mianBranchAngle_thrs) {
         if (with_paras) {
-            //string prefix = "<*(" + turn_scaler + ")F>";
             string prefix = "<*(" + turn_scaler + ")&(" + strahler_number + ")F>";
             str += prefix;
         }
@@ -530,7 +509,6 @@ string Nary_write_grammar(Nary_TreeNode* root, bool with_paras) {
     }
     else if (root->bbx.angleFromParent > 0) {
         if (with_paras) {
-            //str += "[+(" + std::to_string(root->bbx.angleFromParent) + ")F";
             string prefix1 = "<*(" + turn_scaler + ")&(" + strahler_number + ")F>";
             string prfix = "[+(" + turn_angle + ")" + prefix1;
             str += prfix;
@@ -615,7 +593,6 @@ string Nary_find_repetitions(Nary_TreeNode* node, unordered_map<string, Nary_rep
         return "";
 
     string str = "(";
-    //str += node->turn_indicator;
     int main_branch_idx = -1;
     for (int i = 0; i < node->children.size(); i++) {
         if (node->children[i]->main_branch) {
@@ -864,7 +841,6 @@ ruleSuccessor Nary_write_rules(Nary_TreeNode* root, bool new_tree) {
         if (!new_tree) {
             str += "]";
         }
-        //std::cout << "[+F]";
     }
     else if (root->bbx.angleFromParent < 0) {
         if (new_tree) {

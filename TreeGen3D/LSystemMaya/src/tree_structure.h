@@ -183,12 +183,6 @@ static inline vector<vector<TreeNode*> > levelOrderNodeBottom(TreeNode *root)
 		count--;
 		if (count == 0)
 		{
-			/* vector<TreeNode*> tmp;
-			vector<TreeNode *>::iterator it = path.begin();
-			for(; it != path.end(); ++it)
-			{
-			tmp.push_back((*it));
-			}*/
 			sv.push(path);
 			count = path.size();
 		}
@@ -211,12 +205,10 @@ struct Nary_TreeNode
 	std::vector<Nary_TreeNode*> children;
 	Nary_TreeNode *parent;
 	Bounding_box_parse bbx;
-	//std::vector<int> intersect_nodes;
 	int bbx_index;
-	//int child_num;  // the number of its childrens
 	bool main_branch;
-	int type_id, cluster_id, cluster_size, cluster_level; //
-	string turn_indicator; //"0" for main branch, "1" means turn left, "-1" means turn right
+	int type_id, cluster_id, cluster_size, cluster_level;
+	string turn_indicator;
 	string alphabet_symbol;
 	bool old_repetition;
 	int strahler_number; 
@@ -288,4 +280,4 @@ static inline void ConnectTreeNodes(Nary_TreeNode *pParent, Nary_TreeNode *pChil
 	}
 }
 
-#endif /*_TREE_STRUCT_H_*/
+#endif
