@@ -61,12 +61,6 @@ newAssociativeArray m_rules;
 std::set<Nary_TreeNode*> m_selected_repetitions_nary_nodes;
 std::set<string> m_selected_repetitions;
 
-bool m_show_tree = true;
-bool m_show_tree_render = false;
-bool m_render = false;
-int m_image_id = 0;
-bool m_show_image = false;
-bool m_showSampledPoints = false;
 double m_line_thickness = 2.0;
 double m_rotate_angle = 0.0;
 double scale_factor_ = 14.0;
@@ -78,10 +72,8 @@ double m_weight_thrs = 1.0;
 double m_centerDis_thrs = 1.0;
 double m_cornerDis_thrs = 0.1;
 double m_mianBranchAngle_thrs = 5.0;
-std::string m_optAlgorithm_ = "Our";
 int m_alphabet_pointer;
 std::unordered_map<string, string> m_used_symbols;
-double m_final_grammar_length_;
 
 // Helper Functions
 inline int get_class_id(const std::string& name) {
@@ -1085,7 +1077,6 @@ bool grammar_induction() {
     std::cout << "After grammar generalization..." << std::endl;
     std::string cmd = "scrollField -e -text \"" + std::string("S") + "\" $grammarScrollField;";
     MGlobal::executeCommand(cmd.c_str());
-    m_final_grammar_length_ = 0;
     for (int k = 0; k < productions.size(); k++) {
 
         string right = productions[k].successor;
@@ -1105,8 +1096,6 @@ bool grammar_induction() {
                 std::cout << productions[k].precessor << "->" << productions[k].successor << std::endl;
                 string myGrammar = productions[k].precessor + "->" + productions[k].successor;
                 appendTextToScrollFieldFromCpp(myGrammar);
-                m_final_grammar_length_ += productions[k].precessor.length();
-                m_final_grammar_length_ += productions[k].successor.length();
             }
             continue;
         }
@@ -1114,8 +1103,6 @@ bool grammar_induction() {
         std::cout << productions[k].precessor << "->" << productions[k].successor << std::endl;
         string myGrammar = productions[k].precessor + "->" + productions[k].successor;
         appendTextToScrollFieldFromCpp(myGrammar);
-        m_final_grammar_length_ += productions[k].precessor.length();
-        m_final_grammar_length_ += productions[k].successor.length();
     }
     return IsSuccesed;
 }

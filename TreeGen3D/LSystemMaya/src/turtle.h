@@ -5,7 +5,6 @@
 #include "R3/R3.h"
 #include <qmath.h>
 #include <vector>
-//#include "R3Mesh.h"
 using namespace std;
 
 struct t_line {
