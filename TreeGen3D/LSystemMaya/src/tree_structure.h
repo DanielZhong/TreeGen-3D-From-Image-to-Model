@@ -194,10 +194,10 @@ static inline vector<vector<TreeNode*> > levelOrderNodeBottom(TreeNode *root)
 
 
 //n-ary tree
-struct Nary_TreeNode
+struct MultiwayTreeNode
 {
-	std::vector<Nary_TreeNode*> children;
-	Nary_TreeNode *parent;
+	std::vector<MultiwayTreeNode*> children;
+	MultiwayTreeNode *parent;
 	BoundingBox bbx;
 	int bbx_index;
 	bool main_branch;
@@ -207,7 +207,7 @@ struct Nary_TreeNode
 	bool old_repetition;
 	int strahler_number; 
 
-	Nary_TreeNode() : parent(NULL){
+	MultiwayTreeNode() : parent(NULL){
 		bbx_index = -1;
 		main_branch = false;
 		type_id = -1;
@@ -220,7 +220,7 @@ struct Nary_TreeNode
 		strahler_number = 0;
 	}
 
-	Nary_TreeNode(BoundingBox bb) : bbx(bb), parent(NULL) {
+	MultiwayTreeNode(BoundingBox bb) : bbx(bb), parent(NULL) {
 		bbx_index = -1;
 		main_branch = false;
 		type_id = -1;
@@ -234,19 +234,19 @@ struct Nary_TreeNode
 	}
 };
 
-static inline Nary_TreeNode *CreateNaryTreeNode(BoundingBox bbx);
-static inline void DestroyTree(Nary_TreeNode *pRoot);
+static inline MultiwayTreeNode *CreateNaryTreeNode(BoundingBox bbx);
+static inline void DestroyTree(MultiwayTreeNode *pRoot);
 
-static inline Nary_TreeNode *CreateNaryTreeNode(BoundingBox bbx)
+static inline MultiwayTreeNode *CreateNaryTreeNode(BoundingBox bbx)
 {
-	Nary_TreeNode *pNode = new Nary_TreeNode(bbx);
+	MultiwayTreeNode *pNode = new MultiwayTreeNode(bbx);
 	return pNode;
 }
 
-static inline void DestroyTree(Nary_TreeNode *pRoot){
+static inline void DestroyTree(MultiwayTreeNode *pRoot){
 	if (pRoot != NULL)
 	{
-		std::vector<Nary_TreeNode*> children_copy;
+		std::vector<MultiwayTreeNode*> children_copy;
 		for (int i = 0; i < pRoot->children.size(); i++){
 			children_copy.push_back(pRoot->children[i]);
 		}
@@ -260,11 +260,11 @@ static inline void DestroyTree(Nary_TreeNode *pRoot){
 	}
 }
 
-static inline void ConnectTreeNodes(Nary_TreeNode *pParent, Nary_TreeNode *pChild)
+static inline void ConnectTreeNodes(MultiwayTreeNode *pParent, MultiwayTreeNode *pChild)
 {
 	if (pParent != NULL)
 	{
-		std::vector<Nary_TreeNode*> children;
+		std::vector<MultiwayTreeNode*> children;
 
 		pParent->children.push_back(pChild);
 		if (pParent->children[pParent->children.size()-1] != NULL){

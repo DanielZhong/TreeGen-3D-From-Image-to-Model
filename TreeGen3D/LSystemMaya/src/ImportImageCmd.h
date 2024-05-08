@@ -59,7 +59,7 @@ struct Nary_repetition_node {
     int oocur_time;
     int last_groups_numer;
     int group_node_size;
-    std::vector<Nary_TreeNode*> parent_node;
+    std::vector<MultiwayTreeNode*> parent_node;
     //std::unordered_set<TreeNode *> parent_node;
     Nary_repetition_node() : oocur_time(0), last_groups_numer(0) {}
 };

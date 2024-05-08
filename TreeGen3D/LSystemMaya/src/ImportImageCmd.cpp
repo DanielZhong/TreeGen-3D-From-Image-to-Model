@@ -24,16 +24,16 @@
 #define Debug_buildNaryTree 1
 
 // forward declaration
-string Nary_write_grammar(Nary_TreeNode* root, bool with_paras = true);
-string Nary_write_grammar_forPaper(Nary_TreeNode* root, bool with_paras = true);
-double Nary_get_scalar_para(Nary_TreeNode* root);
-void Nary_generate_conformal_grammar(Nary_TreeNode* root, unordered_map<string, Nary_repetition_node>& m);
-string Nary_find_repetitions(Nary_TreeNode* node, unordered_map<string, Nary_repetition_node>& m);
+string Nary_write_grammar(MultiwayTreeNode* root, bool with_paras = true);
+string Nary_write_grammar_forPaper(MultiwayTreeNode* root, bool with_paras = true);
+double Nary_get_scalar_para(MultiwayTreeNode* root);
+void Nary_generate_conformal_grammar(MultiwayTreeNode* root, unordered_map<string, Nary_repetition_node>& m);
+string Nary_find_repetitions(MultiwayTreeNode* node, unordered_map<string, Nary_repetition_node>& m);
 string Nary_select_prefer_repetition(unordered_map<string, Nary_repetition_node>& m, double weight, bool& find);
-bool Nary_update_cluster_infomation(Nary_TreeNode* node, int cluster_id, string symb);
-void Nary_perform_clustring(Nary_TreeNode* node, bool find = false);
-bool Nary_perform_collaps_leaf(Nary_TreeNode* node, bool find = false);
-bool Nary_perform_move_leaf(Nary_TreeNode* node, bool find);
+bool Nary_update_cluster_infomation(MultiwayTreeNode* node, int cluster_id, string symb);
+void Nary_perform_clustring(MultiwayTreeNode* node, bool find = false);
+bool Nary_perform_collaps_leaf(MultiwayTreeNode* node, bool find = false);
+bool Nary_perform_move_leaf(MultiwayTreeNode* node, bool find);
 double edit_distance_DP(string str1, string str2);
 
 struct ruleSuccessor {
@@ -48,7 +48,7 @@ typedef unordered_map<string, vector<ruleSuccessor> > newAssociativeArray;
 
 // ---------------------------------------------------------------------------------------------------------------------------------------------------
 std::vector<BoundingBox> m_bbx_parse;
-Nary_TreeNode* rootNode = NULL; // Initialize pointers to NULL for safety
+MultiwayTreeNode* rootNode = NULL; // Initialize pointers to NULL for safety
 std::string m_save_image_name;
 double m_min_len;
 int m_root_id;
@@ -58,7 +58,7 @@ double m_average_branch_angle_;
 int m_tree_node_size_angle_;
 newAssociativeArray m_rules;
 
-std::set<Nary_TreeNode*> m_selected_repetitions_nary_nodes;
+std::set<MultiwayTreeNode*> m_selected_repetitions_nary_nodes;
 std::set<string> m_selected_repetitions;
 
 double m_mianBranchAngle_thrs = 5.0;
@@ -96,11 +96,11 @@ inline MVector my_rotate(const MVector& s, double angleD) {
     return t;
 }
 
-bool inline Nary_GreaterSort(Nary_TreeNode* a, Nary_TreeNode* b) {
+bool inline Nary_GreaterSort(MultiwayTreeNode* a, MultiwayTreeNode* b) {
     return (a->bbx.angleFromParent > b->bbx.angleFromParent);
 }
 
-void Nary_print_tree(Nary_TreeNode* root, int spaces) {
+void Nary_print_tree(MultiwayTreeNode* root, int spaces) {
     int loop;
     if (root != NULL) {
         MString spaceStr;
@@ -279,20 +279,20 @@ MString toMString(const T& value) {
     return MString(ss.str().c_str());
 }
 
-void Nary_compute_strahler_number(Nary_TreeNode* root) {
-    std::vector<std::vector<Nary_TreeNode*> > matrix;
+void Nary_compute_strahler_number(MultiwayTreeNode* root) {
+    std::vector<std::vector<MultiwayTreeNode*> > matrix;
     if (root == NULL)
     {
         //return matrix;
         return;
     }
 
-    stack<vector<Nary_TreeNode*> > sv;
-    vector<Nary_TreeNode*> temp;
+    stack<vector<MultiwayTreeNode*> > sv;
+    vector<MultiwayTreeNode*> temp;
     temp.push_back(root);
     sv.push(temp);
 
-    vector<Nary_TreeNode*> path;
+    vector<MultiwayTreeNode*> path;
     path.push_back(root);
 
     int count = 1;
@@ -323,7 +323,7 @@ void Nary_compute_strahler_number(Nary_TreeNode* root) {
 
     for (int i = 0; i < matrix.size(); i++) {
         for (int j = 0; j < matrix[i].size(); j++) {
-            Nary_TreeNode* cur_node = matrix[i][j];
+            MultiwayTreeNode* cur_node = matrix[i][j];
             if (cur_node->children.size() == 0) {
                 cur_node->strahler_number = 1;
                 continue;
@@ -346,7 +346,7 @@ void Nary_compute_strahler_number(Nary_TreeNode* root) {
     }
 }
 
-string Nary_write_grammar_forPaper(Nary_TreeNode* root, bool with_paras) {
+string Nary_write_grammar_forPaper(MultiwayTreeNode* root, bool with_paras) {
     string str = "";
     if (root == NULL)
         return str;
@@ -439,7 +439,7 @@ string Nary_write_grammar_forPaper(Nary_TreeNode* root, bool with_paras) {
     return str;
 }
 
-string Nary_write_grammar(Nary_TreeNode* root, bool with_paras) {
+string Nary_write_grammar(MultiwayTreeNode* root, bool with_paras) {
     string str = "";
     if (root == NULL)
         return str;
@@ -532,7 +532,7 @@ string Nary_write_grammar(Nary_TreeNode* root, bool with_paras) {
     return str;
 }
 
-double Nary_get_scalar_para(Nary_TreeNode* root) {
+double Nary_get_scalar_para(MultiwayTreeNode* root) {
     double scalar;
 
     if (root != NULL) {
@@ -563,7 +563,7 @@ double Nary_get_scalar_para(Nary_TreeNode* root) {
     return scalar;
 }
 
-string Nary_find_repetitions(Nary_TreeNode* node, unordered_map<string, Nary_repetition_node>& m)
+string Nary_find_repetitions(MultiwayTreeNode* node, unordered_map<string, Nary_repetition_node>& m)
 {
     if (!node)
         return "";
@@ -587,7 +587,7 @@ string Nary_find_repetitions(Nary_TreeNode* node, unordered_map<string, Nary_rep
     }
     str += ")";
 
-    std::set<Nary_TreeNode*>::iterator siter;
+    std::set<MultiwayTreeNode*>::iterator siter;
     siter = m_selected_repetitions_nary_nodes.find(node);
     if (siter == m_selected_repetitions_nary_nodes.end()) {
         m[str].oocur_time++;
@@ -662,7 +662,7 @@ string Nary_select_prefer_repetition(unordered_map<string, Nary_repetition_node>
 
 
 
-void Nary_perform_clustring(Nary_TreeNode* node, bool find) {
+void Nary_perform_clustring(MultiwayTreeNode* node, bool find) {
     bool collaps_happen = true, move_happen = true;
     int max_iter = 10;
     for (int i = 0; i < max_iter; i++) {
@@ -672,7 +672,7 @@ void Nary_perform_clustring(Nary_TreeNode* node, bool find) {
     }
 }
 
-bool Nary_perform_move_leaf(Nary_TreeNode* node, bool find) {
+bool Nary_perform_move_leaf(MultiwayTreeNode* node, bool find) {
     bool move_happen = false, move3 = false;
     if (node == NULL)
         return false;
@@ -694,7 +694,7 @@ bool Nary_perform_move_leaf(Nary_TreeNode* node, bool find) {
     if (node->parent != NULL && node->cluster_level >= 1) {
         TreeNode* left = NULL, * right = NULL;
 
-        std::vector<Nary_TreeNode*> children_tmp;
+        std::vector<MultiwayTreeNode*> children_tmp;
         int main_branch_idx = -1;
         for (int i = 0; i < node->children.size(); i++) {
             if (node->children[i]->cluster_level >= 1) {
@@ -718,7 +718,7 @@ bool Nary_perform_move_leaf(Nary_TreeNode* node, bool find) {
     return (move_happen || move3);
 }
 
-bool Nary_perform_collaps_leaf(Nary_TreeNode* node, bool find) {
+bool Nary_perform_collaps_leaf(MultiwayTreeNode* node, bool find) {
     bool collaps_happen = false, collaps3 = false;
     if (node == NULL)
         return false;
@@ -752,7 +752,7 @@ bool Nary_perform_collaps_leaf(Nary_TreeNode* node, bool find) {
     return (collaps_happen || collaps3);
 }
 
-bool Nary_update_cluster_infomation(Nary_TreeNode* node, int cluster_id, string symb) {
+bool Nary_update_cluster_infomation(MultiwayTreeNode* node, int cluster_id, string symb) {
     if (node == NULL) {
         return true;
     }
@@ -776,7 +776,7 @@ bool Nary_update_cluster_infomation(Nary_TreeNode* node, int cluster_id, string 
     return update;
 }
 
-ruleSuccessor Nary_write_rules(Nary_TreeNode* root, bool new_tree) {
+ruleSuccessor Nary_write_rules(MultiwayTreeNode* root, bool new_tree) {
     ruleSuccessor rule;
     string str = "";
     if (root == NULL)
@@ -844,7 +844,7 @@ ruleSuccessor Nary_write_rules(Nary_TreeNode* root, bool new_tree) {
     return rule;
 }
 
-void Nary_generate_conformal_grammar(Nary_TreeNode* root, unordered_map<string, Nary_repetition_node>& m) {
+void Nary_generate_conformal_grammar(MultiwayTreeNode* root, unordered_map<string, Nary_repetition_node>& m) {
 
     if (root == NULL) {
         return;
@@ -1487,33 +1487,33 @@ void ImportImageCmd::extractMinimalSpanningTree() {
 }
 
 void ImportImageCmd::buildNaryTree() {
-    std::vector<Nary_TreeNode*> nodes_list;
+    std::vector<MultiwayTreeNode*> nodes_list;
     std::vector<bool> visited;
     std::vector<int> parents;
     //build tree nodes
     for (int i = 0; i < m_bbx_parse.size(); i++) {
         BoundingBox cur_bbx = m_bbx_parse[i];
-        Nary_TreeNode* cur_node = CreateNaryTreeNode(m_bbx_parse[i]);
+        MultiwayTreeNode* cur_node = CreateNaryTreeNode(m_bbx_parse[i]);
         cur_node->bbx_index = i + 1;
         nodes_list.push_back(cur_node);
         visited.push_back(false);
     }
     //consturct the tree
-    Nary_TreeNode* root_node = nodes_list[m_root_id];
+    MultiwayTreeNode* root_node = nodes_list[m_root_id];
     root_node->bbx.angleFromParent = root_node->bbx.angleFromY_LC;
     visited[m_root_id] = true;
 
-    queue<Nary_TreeNode*> qt;
+    queue<MultiwayTreeNode*> qt;
     qt.push(root_node);
     typedef boost::property_map<UndirectedGraph, boost::vertex_index_t>::type IndexMap;
     IndexMap index = get(boost::vertex_index, m_graph);
 
     while (!qt.empty()) {
-        Nary_TreeNode* cur_node = qt.front();
+        MultiwayTreeNode* cur_node = qt.front();
         qt.pop();
         if (cur_node) {
             UndirectedGraph::adjacency_iterator vit, vend;
-            std::vector<Nary_TreeNode*> children_list;
+            std::vector<MultiwayTreeNode*> children_list;
             for (std::tie(vit, vend) = boost::adjacent_vertices(cur_node->bbx_index - 1, m_graph); vit != vend; ++vit) {
                 int adj_idx = index[*vit];
                 if (!visited[adj_idx]) {
