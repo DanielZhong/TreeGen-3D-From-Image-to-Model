@@ -283,7 +283,6 @@ void Nary_compute_strahler_number(MultiwayTreeNode* root) {
     std::vector<std::vector<MultiwayTreeNode*> > matrix;
     if (root == NULL)
     {
-        //return matrix;
         return;
     }
 
