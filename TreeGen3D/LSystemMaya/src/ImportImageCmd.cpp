@@ -660,8 +660,6 @@ string Nary_select_prefer_repetition(unordered_map<string, Nary_repetition_node>
     return select_str;
 }
 
-
-
 void Nary_perform_clustring(MultiwayTreeNode* node, bool find) {
     bool collaps_happen = true, move_happen = true;
     int max_iter = 10;
@@ -1238,6 +1236,58 @@ MStatus ImportImageCmd::doIt(const MArgList& args) {
     return MS::kSuccess;
 }
 
+
+void handleCyclesInGraph() {
+    auto cycles = udgcd::FindCycles<UndirectedGraph, vertex_t>(m_graph);
+    udgcd::PrintPaths(std::cout, cycles);
+    MGlobal::displayInfo("Handled cycles in the graph.");
+}
+
+bool shouldAddEdge(const BoundingBox& bbx1, const BoundingBox& bbx2, int index1, int index2) {
+    double pair_weight = compute_relative_distance(bbx1, bbx2);
+    return pair_weight < 1.0;
+}
+
+void logEdgeAddition(bool condition, bool intersect) {
+    MString message = condition ? "True: " : "False: ";
+    message += intersect ? "0" : "1";
+
+    MGlobal::displayInfo(message);
+}
+
+void initializeGraph() {
+    m_graph.clear();
+    double minY = std::numeric_limits<double>::max();
+    for (int i = 0; i < m_bbx_parse.size(); ++i) {
+        if (m_bbx_parse[i].center_position_LC.Y() < minY) {
+            minY = m_bbx_parse[i].center_position_LC.Y();
+            m_root_id = i;
+        }
+    }
+    MGlobal::displayInfo(MString("Initialized graph with root ID: ") + m_root_id);
+}
+
+void addEdgesToGraph() {
+    std::vector<pairwise_bbx> adjacentBoundingBoxes;
+    for (int i = 0; i < m_bbx_parse.size(); ++i) {
+        for (int j = 0; j < m_bbx_parse.size(); ++j) {
+            if (i == j) continue;
+            if (shouldAddEdge(m_bbx_parse[i], m_bbx_parse[j], i, j)) {
+                pairwise_bbx pb(i, j, compute_relative_distance(m_bbx_parse[i], m_bbx_parse[j]));
+                if (std::find(adjacentBoundingBoxes.begin(), adjacentBoundingBoxes.end(), pb) == adjacentBoundingBoxes.end()) {
+                    adjacentBoundingBoxes.push_back(pb);
+                    logEdgeAddition(true, check_bbox_intersect(m_bbx_parse[i], m_bbx_parse[j]));
+                }
+            }
+        }
+    }
+
+    for (auto& edge : adjacentBoundingBoxes) {
+        boost::add_edge(edge.i, edge.j, edge.weight, m_graph);
+    }
+}
+
+
 // ---------------------------------------------------------------------------------------------------------------------------------------------------
 // Main Logics Functions
 void ImportImageCmd::parseBoundingBoxData(const std::string& filename) {
@@ -1298,80 +1348,10 @@ void ImportImageCmd::parseBoundingBoxData(const std::string& filename) {
     }
 }
 
-
-
-
-//build the graph structure
 void ImportImageCmd::buildGraph() {
-    m_graph.clear();
-
-    std::vector<int> nodes_list;
-    std::vector<bool> visited;
-    m_root_id = 0;
-    double min_y = 100000;
-    //build tree nodes
-    std::vector<pairwise_bbx> adjenct_bbx;
-    MString infoMsg = "number of BBX: " + MString() + m_bbx_parse.size();
-    MGlobal::displayInfo(infoMsg);
-
-    for (int i = 0; i < m_bbx_parse.size(); i++) {
-        BoundingBox cur_bbx = m_bbx_parse[i];
-        for (int j = 0; j < m_bbx_parse.size(); j++) {
-            if (i == j) continue;
-            bool intersect = check_bbox_intersect(m_bbx_parse[i], m_bbx_parse[j]);
-            double pair_weight = compute_relative_distance(m_bbx_parse[i], m_bbx_parse[j]);
-
-            if (pair_weight < 1) {
-                pairwise_bbx pb(i, j, pair_weight);
-                if (std::find(adjenct_bbx.begin(), adjenct_bbx.end(), pb) == adjenct_bbx.end()) {
-                    adjenct_bbx.push_back(pb);
-                }
-                MString logMessage = "True: ";
-                logMessage += intersect ? "0" : "1";
-                MGlobal::displayInfo(logMessage);
-            }
-            else {
-                MString logMessage = "False: ";
-                logMessage += intersect ? "0" : "1";
-                MGlobal::displayInfo(logMessage);
-            }
-
-        }
-        if (m_bbx_parse[i].center_position_LC.Y() < min_y) {
-            min_y = m_bbx_parse[i].center_position_LC.Y();
-            m_root_id = i;
-        }
-        nodes_list.push_back(i);
-        visited.push_back(false);
-    }
-
-    for (int i = 0; i < adjenct_bbx.size(); i++) {
-        pairwise_bbx cur_pb = adjenct_bbx[i];
-        boost::add_edge(cur_pb.i, cur_pb.j, cur_pb.weight, m_graph);
-    }
-
-    std::vector<std::vector<vertex_t>> cycles = udgcd::FindCycles<UndirectedGraph, vertex_t>(m_graph);
-    udgcd::PrintPaths(std::cout, cycles);
-
-
-    MGlobal::displayInfo(MString("Build graph done!"));
-
-#if Debug_buildGraph
-    auto ei = edges(m_graph);
-    MGlobal::displayInfo("Number of edges = " + toMString(num_edges(m_graph)));
-    MGlobal::displayInfo("Edge list:");
-
-    for (auto it = ei.first; it != ei.second; ++it) {
-        MGlobal::displayInfo(toMString(*it));
-    }
-
-    UndirectedGraph::adjacency_iterator vit, vend;
-    std::tie(vit, vend) = boost::adjacent_vertices(2, m_graph);
-    MGlobal::displayInfo("Adjacent vertices to vertex 2:");
-    for (; vit != vend; ++vit) {
-        MGlobal::displayInfo(toMString(*vit));
-    }
-#endif
+    initializeGraph();  // Initialize the graph and identify the root node based on bounding box positions
+    addEdgesToGraph();  // Check bounding box intersections and weights, then add edges accordingly
+    handleCyclesInGraph();  // Detect and handle cycles in the graph
 }
 
 void ImportImageCmd::removeCycles() {
@@ -1662,7 +1642,6 @@ void ImportImageCmd::buildNaryTree() {
             compact_grammar_len += right.length();
         }
     }
-    std::cout << std::endl;
 
     //merge similar rules
     if (grammar_induction() == false) {
@@ -1676,7 +1655,6 @@ void ImportImageCmd::buildNaryTree() {
                 ruleInfo += " = ";
                 ruleInfo += right.c_str();
 
-                // Print using MGlobal
                 MGlobal::displayInfo(ruleInfo);
 
                 appendTextToScrollFieldFromCpp(ruleInfo.asChar());
