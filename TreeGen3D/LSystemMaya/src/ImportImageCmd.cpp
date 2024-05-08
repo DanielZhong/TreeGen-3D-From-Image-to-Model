@@ -61,16 +61,6 @@ newAssociativeArray m_rules;
 std::set<Nary_TreeNode*> m_selected_repetitions_nary_nodes;
 std::set<string> m_selected_repetitions;
 
-double m_line_thickness = 2.0;
-double m_rotate_angle = 0.0;
-double scale_factor_ = 14.0;
-double m_scale = 1.0;
-double m_center_x = 0.0;
-double m_center_y = 0.0;
-int m_bbxID = -1;
-double m_weight_thrs = 1.0;
-double m_centerDis_thrs = 1.0;
-double m_cornerDis_thrs = 0.1;
 double m_mianBranchAngle_thrs = 5.0;
 int m_alphabet_pointer;
 std::unordered_map<string, string> m_used_symbols;
@@ -237,7 +227,7 @@ double compute_relative_distance(BoundingBox b1, BoundingBox b2) {
     double pair_weight = 100;
     double max_height = (b1.height > b2.height) ? b1.height : b2.height;
     double cc_distance = (b1.center_position_LC - b2.center_position_LC).Length();
-    if (cc_distance > m_centerDis_thrs * max_height) {
+    if (cc_distance > 1 * max_height) {
         return pair_weight;
     }
 
@@ -263,7 +253,7 @@ double compute_relative_distance(BoundingBox b1, BoundingBox b2) {
                 min_dis = std::min(min_dis, (mid1 - mid2).Length());
             }
         }
-        if (min_dis > m_cornerDis_thrs * max_height) {
+        if (min_dis > 0.1 * max_height) {
             return pair_weight;
         }
     }
@@ -1306,7 +1296,7 @@ void ImportImageCmd::buildGraph() {
             bool intersect = check_bbox_intersect(m_bbx_parse[i], m_bbx_parse[j]);
             double pair_weight = compute_relative_distance(m_bbx_parse[i], m_bbx_parse[j]);
 
-            if (pair_weight < m_weight_thrs) {
+            if (pair_weight < 1) {
                 pairwise_bbx pb(i, j, pair_weight);
                 if (std::find(adjenct_bbx.begin(), adjenct_bbx.end(), pb) == adjenct_bbx.end()) {
                     adjenct_bbx.push_back(pb);
