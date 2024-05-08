@@ -1146,6 +1146,48 @@ double edit_distance_DP(string str1, string str2)
     return distance;
 }
 
+void updateLocalCoordinates(BoundingBox& bbx) {
+    bbx.center_position_LC = R2Vector(bbx.center_position.X(), -bbx.center_position.Y());
+    bbx.l_t_corner_LC = R2Vector(bbx.l_t_corner.X(), -bbx.l_t_corner.Y());
+    bbx.r_t_corner_LC = R2Vector(bbx.r_t_corner.X(), -bbx.r_t_corner.Y());
+    bbx.r_b_corner_LC = R2Vector(bbx.r_b_corner.X(), -bbx.r_b_corner.Y());
+    bbx.l_b_corner_LC = R2Vector(bbx.l_b_corner.X(), -bbx.l_b_corner.Y());
+    bbx.direction_LC = R2Vector(bbx.direction.X(), -bbx.direction.Y());
+    bbx.direction_LC_opp = R2Vector(bbx.direction_opp.X(), -bbx.direction_opp.Y());
+    bbx.angleFromY_LC = RAD2DEG(angleFromY_LC(bbx.direction_LC));
+    bbx.angleFromY_LC_opp = RAD2DEG(angleFromY_LC(bbx.direction_LC_opp));
+}
+
+void calculateRotatedBoundingBox(BoundingBox& bbx) {
+    QPointF corners[4] = {
+        QPointF(-bbx.width * 0.5, -bbx.height * 0.5),
+        QPointF(bbx.width * 0.5, -bbx.height * 0.5),
+        QPointF(bbx.width * 0.5, bbx.height * 0.5),
+        QPointF(-bbx.width * 0.5, bbx.height * 0.5)
+    };
+
+    QPointF dir(0, 1);
+    for (auto& corner : corners) {
+        corner = my_rotate(corner, bbx.angleFromY);
+    }
+
+    bbx.l_t_corner = R2Vector(bbx.center_position.X() + corners[0].x(), bbx.center_position.Y() + corners[0].y());
+    bbx.r_t_corner = R2Vector(bbx.center_position.X() + corners[1].x(), bbx.center_position.Y() + corners[1].y());
+    bbx.r_b_corner = R2Vector(bbx.center_position.X() + corners[2].x(), bbx.center_position.Y() + corners[2].y());
+    bbx.l_b_corner = R2Vector(bbx.center_position.X() + corners[3].x(), bbx.center_position.Y() + corners[3].y());
+    dir = my_rotate(dir, bbx.angleFromY);
+    bbx.direction = R2Vector(dir.x(), dir.y());
+    bbx.direction_opp = R2Vector(-dir.x(), -dir.y());
+    updateLocalCoordinates(bbx);
+}
+
+float normalizeAngle(float angle) {
+    // Normalize an angle to the range -180 to 180
+    while (angle > 180) angle -= 360;
+    while (angle < -180) angle += 360;
+    return angle;
+}
+
 // ---------------------------------------------------------------------------------------------------------------------------------------------------
 // Constructor & Deconstructor & Creator & Input Syntax
 ImportImageCmd::ImportImageCmd() {}
@@ -1199,82 +1241,65 @@ MStatus ImportImageCmd::doIt(const MArgList& args) {
 // ---------------------------------------------------------------------------------------------------------------------------------------------------
 // Main Logics Functions
 void ImportImageCmd::parseBoundingBoxData(const std::string& filename) {
+    // Prepare filenames for image and bounding box data
+    m_save_image_name = filename.substr(0, filename.size() - 4) + "_bbx.jpg";
+    std::string bbox_file = filename.substr(0, filename.size() - 3) + "txt";
 
-    m_save_image_name = filename;
-    m_save_image_name.replace(m_save_image_name.end() - 4, m_save_image_name.end(), "_bbx.jpg");
+    // Open the bounding box data file
+    std::ifstream in(bbox_file);
+    if (!in) {
+        std::cerr << "Failed to open file: " << bbox_file << std::endl;
+        return;
+    }
 
     m_bbx_parse.clear();
-    m_min_len = 1000;
-    std::string bbox_name = filename;
-    bbox_name.replace(bbox_name.end() - 3, bbox_name.end(), "txt");
-    std::ifstream in(bbox_name.c_str());
-    string class_name;
+    m_min_len = std::numeric_limits<float>::max();
+
+    // Variables for parsing the bounding box data
+    std::string class_name;
     float score, x_c, y_c, w, h, angle;
-    while (in) {
-        in >> class_name >> score >> x_c >> y_c >> w >> h >> angle;
-        if (in) {
-            BoundingBox bbx;
-            bbx.center_position = R2Vector(x_c, y_c);
-            bbx.label_id = get_class_id(class_name);
-            //here we make two strong assumptions about the rotation
-            if (w > h) {
-                bbx.width = h;
-                bbx.height = w; // +8;
-                bbx.angleFromY = -angle + 90; //in image coordinates, this angle is from Y-axis to the direction of this bbx  
-                bbx.angleFromY_opp = -(90 + angle);
-            }
-            else {
-                bbx.width = w;
-                bbx.height = h; // +8;
-                bbx.angleFromY = -angle - 180; //-90-(180-90+angle)
-                bbx.angleFromY_opp = -angle;
-            }
 
-            m_min_len = std::min(m_min_len, bbx.height);
-
-            QPointF ltc(-bbx.width * 0.5, -bbx.height * 0.5);
-            QPointF rtc(bbx.width * 0.5, -bbx.height * 0.5);
-            QPointF rbc(bbx.width * 0.5, bbx.height * 0.5);
-            QPointF lbc(-bbx.width * 0.5, bbx.height * 0.5);
-            QPointF dir(0, 1);
-
-            ltc = my_rotate(ltc, bbx.angleFromY);
-            rtc = my_rotate(rtc, bbx.angleFromY);
-            rbc = my_rotate(rbc, bbx.angleFromY);
-            lbc = my_rotate(lbc, bbx.angleFromY);
-            dir = my_rotate(dir, bbx.angleFromY);
-
-            bbx.l_t_corner = R2Vector(bbx.center_position.X() + ltc.x(), bbx.center_position.Y() + ltc.y());
-            bbx.r_t_corner = R2Vector(bbx.center_position.X() + rtc.x(), bbx.center_position.Y() + rtc.y());
-            bbx.r_b_corner = R2Vector(bbx.center_position.X() + rbc.x(), bbx.center_position.Y() + rbc.y());
-            bbx.l_b_corner = R2Vector(bbx.center_position.X() + lbc.x(), bbx.center_position.Y() + lbc.y());
-            bbx.direction = R2Vector(dir.x(), dir.y());
-            bbx.direction_opp = R2Vector(-dir.x(), -dir.y());
-
-            bbx.center_position_LC = R2Vector(bbx.center_position.X(), -bbx.center_position.Y());
-            bbx.l_t_corner_LC = R2Vector(bbx.l_t_corner.X(), -bbx.l_t_corner.Y());
-            bbx.r_t_corner_LC = R2Vector(bbx.r_t_corner.X(), -bbx.r_t_corner.Y());
-            bbx.r_b_corner_LC = R2Vector(bbx.r_b_corner.X(), -bbx.r_b_corner.Y());
-            bbx.l_b_corner_LC = R2Vector(bbx.l_b_corner.X(), -bbx.l_b_corner.Y());
-            bbx.direction_LC = R2Vector(bbx.direction.X(), -bbx.direction.Y());
-            bbx.direction_LC_opp = R2Vector(bbx.direction_opp.X(), -bbx.direction_opp.Y());
-            //bbx.angleFromY_LC = std::min(0.0, std::abs(RAD2DEG(angleFromY_LC(bbx.direction_LC))));
-            bbx.angleFromY_LC = RAD2DEG(angleFromY_LC(bbx.direction_LC));
-            bbx.angleFromY_LC_opp = RAD2DEG(angleFromY_LC(bbx.direction_LC_opp));
-
-            m_bbx_parse.push_back(bbx);
+    while (in >> class_name >> score >> x_c >> y_c >> w >> h >> angle) {
+        BoundingBox bbx;
+        bbx.center_position = R2Vector(x_c, y_c);
+        bbx.label_id = get_class_id(class_name);
+        // Assign width and height based on orientation
+        if (w > h) {
+            std::swap(w, h);
+            bbx.angleFromY = normalizeAngle(-angle + 90);
+            bbx.angleFromY_opp = normalizeAngle(-(angle + 90));
         }
-    };
+        else {
+            bbx.angleFromY = normalizeAngle(-angle - 180);
+            bbx.angleFromY_opp = normalizeAngle(-angle);
+        }
+        bbx.width = w;
+        bbx.height = h;
+
+        // Track minimum bounding box height
+        m_min_len = std::min(m_min_len, bbx.height);
+
+        // Calculate rotated corners and direction vectors
+        calculateRotatedBoundingBox(bbx);
+
+        m_bbx_parse.push_back(bbx);
+    }
+
     in.close();
 
-    // Test
-#if Debug_parseBoundingBoxData
-    for (size_t i = 0; i < m_bbx_parse.size(); ++i) {
-        const auto& bbx = m_bbx_parse[i];
-        MGlobal::displayInfo(MString("BBX ") + std::to_string(i + 1).c_str() + ": Center (" + std::to_string(bbx.center_position.X()).c_str() + ", " + std::to_string(bbx.center_position.Y()).c_str() + "), Width: " + std::to_string(bbx.width).c_str() + ", Height: " + std::to_string(bbx.height).c_str() + ", Angle: " + std::to_string(bbx.angleFromY).c_str());
+    // Debug information output
+    if (Debug_parseBoundingBoxData) {
+        for (size_t i = 0; i < m_bbx_parse.size(); ++i) {
+            const auto& bbx = m_bbx_parse[i];
+            std::cout << "BBX " << (i + 1) << ": Center (" << bbx.center_position.X() << ", "
+                << bbx.center_position.Y() << "), Width: " << bbx.width
+                << ", Height: " << bbx.height << ", Angle: " << bbx.angleFromY << std::endl;
+        }
     }
-#endif
 }
+
+
+
 
 //build the graph structure
 void ImportImageCmd::buildGraph() {
